@@ -12,4 +12,5 @@ uniform mat4 uModel;
 void main() {
   vUV = aUV;
   gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
+  // gl_Position = vec4(aPos.xy, 0.0, 1.0);
 }

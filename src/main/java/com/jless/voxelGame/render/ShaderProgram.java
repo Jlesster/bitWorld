@@ -64,6 +64,7 @@ public class ShaderProgram {
       while((line = br.readLine()) != null) sb.append(line).append("\n");
       br.close();
 
+      System.out.println("Loaded shader source: " + path);
       return sb.toString();
     } catch (Exception e) {
       throw new RuntimeException("Failed reading shader: " + path, e);

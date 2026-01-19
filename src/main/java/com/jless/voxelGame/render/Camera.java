@@ -10,7 +10,7 @@ public class Camera {
 
   private final Vector3f forward = new Vector3f();
   private final Vector3f right = new Vector3f();
-  private final Vector3f up = new Vector3f();
+  private final Vector3f up = new Vector3f(0, 1, 0);
 
   public Camera() {}
 
@@ -31,7 +31,7 @@ public class Camera {
     view.identity().lookAt(pos, center, up);
   }
 
-  public Matrix4f projection() { return projection(); }
+  public Matrix4f projection() { return projection; }
   public Matrix4f view() { return view; }
 
   public Vector3f forward() { return forward; }
