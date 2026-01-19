@@ -10,5 +10,7 @@ public final class Consts {
   //Engine
   public static final boolean VSYNC = true;
 
+  public static final float FOV = 85.0f;
+
   private Consts() {}
 }

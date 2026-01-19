@@ -2,9 +2,17 @@ package com.jless.voxelGame;
 
 import static org.lwjgl.opengl.GL11.*;
 
+import com.jless.voxelGame.player.Player;
+import com.jless.voxelGame.player.PlayerController;
+import com.jless.voxelGame.render.Camera;
+
 public class App {
 
   private Window window;
+
+  private Player player;
+  private PlayerController controller;
+  private Camera camera;
 
   public void run() {
     init();
@@ -14,7 +22,17 @@ public class App {
 
   private void init() {
     window = new Window(Consts.WINDOW_WIDTH, Consts.WINDOW_HEIGHT, Consts.WINDOW_TITLE);
+
     Time.init();
+    Input.init(window.window());
+
+    Input.captureMouse(true);
+
+    player = new Player();
+    controller = new PlayerController(player);
+
+    camera = new Camera();
+    camera.setGluPersp(Consts.FOV, (float)window.width() / (float)window.height(), 0.05f, 1000.0f);
   }
 
   private void loop() {
@@ -28,6 +46,7 @@ public class App {
       render();
 
       window.update();
+      Input.endFrame();
     }
   }
 
@@ -36,7 +55,8 @@ public class App {
   }
 
   private void update(float dt) {
-    //TODO input, player, world updates
+    controller.update(dt);
+    camera.updateView(player.position, player.yaw, player.pitch);
   }
 
   private void cleanup() {
