@@ -8,6 +8,7 @@ import com.jless.voxelGame.Consts;
 public class World {
 
   private final Map<ChunkPos, Chunk> chunks = new HashMap<>();
+  private final TerrainGen terrain = new TerrainGen(12345L);
 
   public Chunk getOrCreateChunk(int cx, int cz) {
     ChunkPos pos = new ChunkPos(cx, cz);
@@ -15,6 +16,7 @@ public class World {
     Chunk c = chunks.get(pos);
     if(c == null) {
       c = new Chunk(cx, cz);
+      terrain.generateChunks(c);
       chunks.put(pos, c);
     }
     return c;

@@ -2,42 +2,55 @@ package com.jless.voxelGame.render;
 
 public class TextureAtlas {
 
-  private final Texture tex;
-
-  private final int tileSize;
   private final int tilesX;
   private final int tilesY;
+  private final float tileW;
+  private final float tileH;
 
-  public TextureAtlas(Texture texture, int tileSizePX) {
-    this.tex = texture;
-    this.tileSize = tileSizePX;
+  public TextureAtlas(int atlasWpx, int atlasHpx, int tileSizePX) {
+    this.tilesX = atlasWpx / atlasHpx;
+    this.tilesY = atlasHpx / atlasWpx;
 
-    if(tex.width() % tileSize != 0 || tex.height() % tileSize != 0) {
-      throw new IllegalArgumentException("Texture atlas: sheet must be divisible by tile size");
-    }
-
-    this.tilesX = tex.width() / tileSize;
-    this.tilesY = tex.height() / tileSize;
+    this.tileW = 1.0f / tilesX;
+    this.tileH = 1.0f / tilesY;
   }
 
-  public Texture texture() {
-    return tex;
+  public static int tile(int x, int y) {
+    return (x & 0xFF) | ((y & 0xFF) << 16);
+  }
+
+  public static int tileX(int packed) {
+    return packed & 0xFF;
+  }
+
+  public static int tileY(int packed) {
+    return (packed >>> 16) & 0xFF;
+  }
+
+  public static class UVRect {
+    public final float u0, v0, u1, v1;
+
+    public UVRect(float u0, float v0, float u1, float v1) {
+      this.u0 = u0;
+      this.v0 = v0;
+      this.u1 = u1;
+      this.v1 = v1;
+    }
   }
 
   public int tilesX() { return tilesX; }
   public int tilesY() { return tilesY; }
 
-  public float[] getUVRect(int tileX, int tileY) {
-    if(tileX < 0 || tileX >= tilesX || tileY < 0 || tileY >= tilesY) {
-      throw new IllegalArgumentException("Tile out of range");
-    }
+  public UVRect getUVRect(int packedTile) {
+    int tx = tileX(packedTile);
+    int ty = tileY(packedTile);
 
-    float u0 = (tileX * tileSize) / (float)tex.width();
-    float v0 = (tileY * tileSize) / (float)tex.height();
+    float u0 = tx * tileW;
+    float v0 = ty * tileH;
 
-    float u1 = ((tileX + 1) * tileSize) / (float)tex.width();
-    float v1 = ((tileY + 1) * tileSize) / (float)tex.height();
+    float u1 = u0 + tileW;
+    float v1 = v0 + tileH;
 
-    return new float[] { u0, v0, u1, v1 };
+    return new UVRect(u0, v0, u1, v1);
   }
 }

@@ -22,6 +22,7 @@ public final class BlockID {
   public static final byte COAL_BLOCK = 18;
   public static final byte DIAMOND_BLOCK = 19;
   public static final byte FURNACE = 20;
+  public static final byte BEDROCK = 21;
 
   private BlockID() {}
 }

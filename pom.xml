@@ -239,5 +239,116 @@
         </plugin>
       </plugins>
     </pluginManagement>
+      <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>com.jless.voxelGame.App</mainClass>
+                  <addClasspath>true</addClasspath>
+                </manifest>
+              </archive>
+              <descriptors>
+                <descriptor>assembly.xml</descriptor>
+              </descriptors>
+              <finalName>${project.artifactId}-${project.version}-fat</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Ensure resources are included -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <filtering>false</filtering>
+                  <includes>
+                    <include>**/*</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Natives -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.0</version>
+         <executions>
+         <!-- Linux natives -->
+         <execution>
+           <id>copy-linux-natives</id>
+           <phase>process-resources</phase>
+           <goals><goal>copy-dependencies</goal></goals>
+           <configuration>
+             <outputDirectory>${project.build.directory}/natives/linux</outputDirectory>
+            <includeClassifiers>natives-linux</includeClassifiers>
+            <stripVersion>true</stripVersion>
+          </configuration>
+         </execution>
+            <!-- Windows natives -->
+            <execution>
+             <id>copy-windows-natives</id>
+             <phase>process-resources</phase>
+             <goals><goal>copy-dependencies</goal></goals>
+             <configuration>
+               <outputDirectory>${project.build.directory}/natives/windows</outputDirectory>
+               <includeClassifiers>natives-windows</includeClassifiers>
+               <stripVersion>true</stripVersion>
+             </configuration>
+            </execution>
+            <!-- macOS natives -->
+            <execution>
+             <id>copy-macos-natives</id>
+             <phase>process-resources</phase>
+             <goals><goal>copy-dependencies</goal></goals>
+             <configuration>
+               <outputDirectory>${project.build.directory}/natives/macos</outputDirectory>
+               <includeClassifiers>natives-macos</includeClassifiers>
+               <stripVersion>true</stripVersion>
+             </configuration>
+            </execution>
+           </executions>
+          </plugin>
+      <!-- Compiler settings -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>21</source>
+          <target>21</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      </plugins>
   </build>
 </project>

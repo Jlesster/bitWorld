@@ -50,7 +50,10 @@ public class App {
     shader = new ShaderProgram("shaders/simple.vert", "shaders/simple.frag");
 
     texture = new Texture("Tileset.png");
-    atlas = new TextureAtlas(texture, 16);
+    atlas = new TextureAtlas( 16, 16, 16);
+    int tile = TextureAtlas.tile(0, 0);
+    TextureAtlas.UVRect uv = atlas.getUVRect(tile);
+
     rebuildQuadForTile(atlasX, atlasY);
 
     World world = new World();
@@ -97,18 +100,14 @@ public class App {
   }
 
   private void rebuildQuadForTile(int tileX, int tileY) {
-    float[] uv = atlas.getUVRect(tileX, tileY);
-
-    float u0 = uv[0];
-    float v0 = uv[1];
-    float u1 = uv[2];
-    float v1 = uv[3];
+    int tile = TextureAtlas.tile(tileX, tileY);
+    TextureAtlas.UVRect uv = atlas.getUVRect(tile);
 
     float[] verts = {
-      -0.5f, -0.5f, 0.0f,   u0, v0,
-       0.5f, -0.5f, 0.0f,   u1, v0,
-       0.5f,  0.5f, 0.0f,   u1, v1,
-      -0.5f,  0.5f, 0.0f,   u0, v1,
+      -0.5f, -0.5f, 0.0f,   uv.u0, uv.v0,
+       0.5f, -0.5f, 0.0f,   uv.u1, uv.v0,
+       0.5f,  0.5f, 0.0f,   uv.u1, uv.v1,
+      -0.5f,  0.5f, 0.0f,   uv.u0, uv.v1,
     };
 
     int[] inds = {

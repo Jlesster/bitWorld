@@ -1,8 +1,11 @@
 package com.jless.voxelGame.world;
 
 import com.jless.voxelGame.Consts;
+import com.jless.voxelGame.render.Mesh;
 
 public class Chunk {
+
+  public Mesh mesh;
 
   private final byte[] blocks;
   public final int cx;
