@@ -52,6 +52,7 @@ public class ChunkMesher {
     int[] in = new int[inds.size()];
     for(int i = 0; i < in.length; i++) in[i] = inds.get(i);
 
+    System.out.println("Mesher: verts=" + verts.size() + "inds=" + inds.size());
     return new Mesh(v, in);
   }
 

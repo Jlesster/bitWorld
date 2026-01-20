@@ -7,8 +7,7 @@ import org.joml.Matrix4f;
 import com.jless.voxelGame.player.Player;
 import com.jless.voxelGame.player.PlayerController;
 import com.jless.voxelGame.render.*;
-import com.jless.voxelGame.world.BlockID;
-import com.jless.voxelGame.world.World;
+import com.jless.voxelGame.world.*;
 
 public class App {
 
@@ -18,6 +17,10 @@ public class App {
   private PlayerController controller;
   private Camera camera;
   private Mesh qMesh;
+  private Chunk chunk;
+  private ChunkMesher chunkMesh;
+  private World world;
+  private TerrainGen generator;
   private Texture texture;
   private ShaderProgram shader;
   private TextureAtlas atlas;
@@ -36,6 +39,26 @@ public class App {
   private void init() {
     window = new Window(Consts.WINDOW_WIDTH, Consts.WINDOW_HEIGHT, Consts.WINDOW_TITLE);
 
+    texture = new Texture("Tileset.png");
+    atlas = new TextureAtlas( 16, 16, 16);
+    shader = new ShaderProgram("shaders/simple.vert", "shaders/simple.frag");
+
+    world = new World();
+    chunkMesh = new ChunkMesher();
+    for(int x = -5; x <= 5; x++) {
+      for(int z = -5; z <= 5; z++) {
+        world.setBlock(x, 79, z, BlockID.STONE);
+      }
+    }
+
+    chunk = world.getChunk(0, 0);
+
+    System.out.println("Chunk is null: " + (chunk == null));
+    if(chunk != null) {
+      chunk.mesh = chunkMesh.buildMesh(world, chunk, atlas);
+      System.out.println("Mesh is null: " + (chunk.mesh == null));
+    }
+
     Time.init();
     Input.init(window.window());
 
@@ -44,25 +67,11 @@ public class App {
     player = new Player();
     controller = new PlayerController(player);
 
+    player.position.set(8, 10, 8);
+    player.pitch = -50;
+
     camera = new Camera();
     camera.setGluPersp(Consts.FOV, (float)window.width() / (float)window.height(), 0.05f, 1000.0f);
-
-    shader = new ShaderProgram("shaders/simple.vert", "shaders/simple.frag");
-
-    texture = new Texture("Tileset.png");
-    atlas = new TextureAtlas( 16, 16, 16);
-    int tile = TextureAtlas.tile(0, 0);
-    TextureAtlas.UVRect uv = atlas.getUVRect(tile);
-
-    rebuildQuadForTile(atlasX, atlasY);
-
-    World world = new World();
-    for(int x = -5; x <= 5; x++) {
-      for(int z = -5; z <= 5; z++) {
-        world.setBlock(x, 79, z, BlockID.STONE);
-      }
-    }
-    world.setBlock(0, 79, 0, BlockID.STONE);
 
     System.out.println("Block at 0,79,0 = " + world.getBlock(0, 79, 0));
     System.out.println("Block at 0,80,0 = " + world.getBlock(0, 80, 0));
@@ -95,33 +104,36 @@ public class App {
     texture.bind(0);
     shader.setInt("uTex", 0);
 
-    qMesh.render();
+    if(chunk != null && chunk.mesh != null) {
+      chunk.mesh.render();
+    }
+
     shader.unbind();
   }
 
-  private void rebuildQuadForTile(int tileX, int tileY) {
-    int tile = TextureAtlas.tile(tileX, tileY);
-    TextureAtlas.UVRect uv = atlas.getUVRect(tile);
-
-    float[] verts = {
-      -0.5f, -0.5f, 0.0f,   uv.u0, uv.v0,
-       0.5f, -0.5f, 0.0f,   uv.u1, uv.v0,
-       0.5f,  0.5f, 0.0f,   uv.u1, uv.v1,
-      -0.5f,  0.5f, 0.0f,   uv.u0, uv.v1,
-    };
-
-    int[] inds = {
-      0,1,2,
-      2,3,0
-    };
-
-    if(qMesh != null) {
-      qMesh.destroy();
-    }
-
-    qMesh = new Mesh(verts, inds);
-
-  }
+  // private void rebuildQuadForTile(int tileX, int tileY) {
+  //   int tile = TextureAtlas.tile(tileX, tileY);
+  //   TextureAtlas.UVRect uv = atlas.getUVRect(tile);
+  //
+  //   float[] verts = {
+  //     -0.5f, -0.5f, 0.0f,   uv.u0, uv.v0,
+  //      0.5f, -0.5f, 0.0f,   uv.u1, uv.v0,
+  //      0.5f,  0.5f, 0.0f,   uv.u1, uv.v1,
+  //     -0.5f,  0.5f, 0.0f,   uv.u0, uv.v1,
+  //   };
+  //
+  //   int[] inds = {
+  //     0,1,2,
+  //     2,3,0
+  //   };
+  //
+  //   if(qMesh != null) {
+  //     qMesh.destroy();
+  //   }
+  //
+  //   qMesh = new Mesh(verts, inds);
+  //
+  // }
 
   private void update(float dt) {
     controller.update(dt);
@@ -130,7 +142,6 @@ public class App {
     if(Input.pressed(org.lwjgl.glfw.GLFW.GLFW_KEY_W)) {
       atlasX++;
       if(atlasX >= atlas.tilesX()) atlasX = 0;
-      rebuildQuadForTile(atlasX, atlasY);
     }
   }
 
