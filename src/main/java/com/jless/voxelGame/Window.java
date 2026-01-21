@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL;
 
 public class Window {
 
-  private long window;
+  public long window;
   private int width;
   private int height;
 
@@ -39,8 +39,9 @@ public class Window {
     glfwShowWindow(window);
 
     GL.createCapabilities();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     glClearColor(0.1f, 0.1f, 0.12f, 1.0f);

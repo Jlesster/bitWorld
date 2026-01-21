@@ -8,23 +8,23 @@ public class TextureAtlas {
   private final float tileH;
 
   public TextureAtlas(int atlasWpx, int atlasHpx, int tileSizePX) {
-    this.tilesX = atlasWpx / atlasHpx;
-    this.tilesY = atlasHpx / atlasWpx;
+    this.tilesX = atlasWpx / tileSizePX;
+    this.tilesY = atlasHpx / tileSizePX;
 
     this.tileW = 1.0f / tilesX;
     this.tileH = 1.0f / tilesY;
   }
 
   public static int tile(int x, int y) {
-    return (x & 0xFF) | ((y & 0xFF) << 16);
+    return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
   }
 
   public static int tileX(int packed) {
-    return packed & 0xFF;
+    return packed & 0xFFFF;
   }
 
   public static int tileY(int packed) {
-    return (packed >>> 16) & 0xFF;
+    return (packed >>> 16) & 0xFFFF;
   }
 
   public static class UVRect {

@@ -18,9 +18,9 @@ public class TerrainGen {
         int wx = baseX + lx;
         int wz = baseZ + lz;
 
-        float n = perlin.fbm(wx* 0.01f, wz * 0.01f, 4, 0.5f, 2.0f);
+        float n = perlin.fbm(wx* 0.008f, wz * 0.008f, 5, 0.5f, 2.0f);
 
-        int height = Consts.SEA_LEVEL + (int)(n * 20.0f);
+        int height = Consts.SEA_LEVEL + (int)(n * 80.0f);
 
         for(int y = 0; y < Consts.CHUNK_Y; y++) {
           byte id;

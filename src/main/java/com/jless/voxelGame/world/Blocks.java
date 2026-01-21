@@ -25,9 +25,9 @@ public class Blocks {
     TEX_SIDE[BlockID.DIRT & 0xFF] = TextureAtlas.tile(0, 0);
 
     SOLID[BlockID.STONE & 0xFF] = true;
-    TEX_TOP[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 0);
-    TEX_BOTTOM[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 0);
-    TEX_SIDE[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 0);
+    TEX_TOP[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 11);
+    TEX_BOTTOM[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 11);
+    TEX_SIDE[BlockID.STONE & 0xFF] = TextureAtlas.tile(0, 11);
 
     SOLID[BlockID.COBBLE & 0xFF] = true;
     TEX_TOP[BlockID.COBBLE & 0xFF] = TextureAtlas.tile(0, 0);

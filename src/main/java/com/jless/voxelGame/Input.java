@@ -31,6 +31,7 @@ public final class Input {
     });
 
     glfwSetCursorPosCallback(window, (w, xpos, ypos) -> {
+      System.out.println("mouse moved: " + xpos + ", " + ypos);
       mouseX = xpos;
       mouseY = ypos;
 

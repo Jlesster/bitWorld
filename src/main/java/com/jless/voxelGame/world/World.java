@@ -42,11 +42,11 @@ public class World {
     int cx = floorDiv(wx, Consts.CHUNK_X);
     int cz = floorDiv(wz, Consts.CHUNK_Z);
 
-    Chunk c = getChunk(cx, cz);
-    if(c == null) return BlockID.AIR;
-
     int lx = floorMod(wx, Consts.CHUNK_X);
     int lz = floorMod(wz, Consts.CHUNK_Z);
+
+    Chunk c = getChunk(cx, cz);
+    if(c == null) return BlockID.AIR;
 
     return c.getLocal(lx, wy, lz);
   }
@@ -55,10 +55,10 @@ public class World {
     int cx = floorDiv(wx, Consts.CHUNK_X);
     int cz = floorDiv(wz, Consts.CHUNK_Z);
 
-    Chunk c = getOrCreateChunk(cx, cz) ;
-
     int lx = floorMod(wx, Consts.CHUNK_X);
     int lz = floorMod(wz, Consts.CHUNK_Z);
+
+    Chunk c = getOrCreateChunk(cx, cz) ;
 
     c.setLocal(lx, wy, lz, id);
   }

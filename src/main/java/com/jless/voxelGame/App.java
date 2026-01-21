@@ -1,3 +1,5 @@
+//TODO fix chunk rendering, generation and how blocks are textured
+
 package com.jless.voxelGame;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -25,7 +27,6 @@ public class App {
   private ShaderProgram shader;
   private TextureAtlas atlas;
 
-  private int atlasX = 0;
   private int atlasY = 9;
 
   private final Matrix4f model = new Matrix4f();
@@ -40,7 +41,7 @@ public class App {
     window = new Window(Consts.WINDOW_WIDTH, Consts.WINDOW_HEIGHT, Consts.WINDOW_TITLE);
 
     texture = new Texture("Tileset.png");
-    atlas = new TextureAtlas( 16, 16, 16);
+    atlas = new TextureAtlas(384, 192, 16);
     shader = new ShaderProgram("shaders/simple.vert", "shaders/simple.frag");
 
     world = new World();
@@ -76,20 +77,19 @@ public class App {
     System.out.println("Block at 0,79,0 = " + world.getBlock(0, 79, 0));
     System.out.println("Block at 0,80,0 = " + world.getBlock(0, 80, 0));
 
-    model.identity().translate(0, 0, -2).scale(2.0f);
   }
 
   private void loop() {
     while(!window.shouldClose()) {
       Time.update();
       float dt = Time.dt();
+      window.update();
 
       update(dt);
 
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       render();
 
-      window.update();
       Input.endFrame();
     }
   }
@@ -138,11 +138,6 @@ public class App {
   private void update(float dt) {
     controller.update(dt);
     camera.updateView(player.position, player.yaw, player.pitch);
-
-    if(Input.pressed(org.lwjgl.glfw.GLFW.GLFW_KEY_W)) {
-      atlasX++;
-      if(atlasX >= atlas.tilesX()) atlasX = 0;
-    }
   }
 
   private void cleanup() {

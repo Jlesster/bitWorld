@@ -33,8 +33,14 @@ public class ChunkMesher {
             int nx = wx + face.dx;
             int ny = wy + face.dy;
             int nz = wz + face.dz;
+            byte nid;
 
-            byte nid = world.getBlock(nx, ny, nz);
+            if(chunk.inBounds(nx, ny, nz)) {
+              nid = chunk.getLocal(nx, ny, nz);
+            } else {
+              nid = world.getBlock(baseX + nx, ny, baseX + nz);
+            }
+
             if(Blocks.isSolid(nid)) continue;
 
             int tile = Blocks.getTile(id, face);
@@ -52,7 +58,6 @@ public class ChunkMesher {
     int[] in = new int[inds.size()];
     for(int i = 0; i < in.length; i++) in[i] = inds.get(i);
 
-    System.out.println("Mesher: verts=" + verts.size() + "inds=" + inds.size());
     return new Mesh(v, in);
   }
 
@@ -63,45 +68,45 @@ public class ChunkMesher {
 
     switch(face) {
       case NORTH -> quad(
-        x, y, z,
-        x + 1, y, z,
+        x    , y    , z,
+        x    , y + 1, z,
         x + 1, y + 1, z,
-        x, y + 1, z,
+        x + 1, y    , z,
         uv, startIndex
       );
       case SOUTH -> quad(
-        x + 1, y, z + 1,
-        x, y, z + 1,
-        x, y + 1, z,
+        x + 1, y    , z + 1,
         x + 1, y + 1, z + 1,
+        x    , y + 1, z + 1,
+        x    , y    , z + 1,
         uv, startIndex
       );
       case EAST -> quad(
-        x + 1, y, z,
-        x + 1, y, z + 1,
-        x + 1, y + 1, z + 1,
+        x + 1, y    , z,
         x + 1, y + 1, z,
+        x + 1, y + 1, z + 1,
+        x + 1, y    , z + 1,
         uv, startIndex
       );
       case WEST -> quad(
-        x, y, z + 1,
-        x, y, z,
-        x, y + 1, z,
-        x, y + 1, z + 1,
+        x    , y    , z + 1,
+        x    , y + 1, z + 1,
+        x    , y + 1, z,
+        x    , y    , z,
         uv, startIndex
       );
       case UP -> quad(
-        x, y + 1, z,
-        x + 1, y + 1, z,
+        x    , y + 1, z,
+        x    , y + 1, z + 1,
         x + 1, y + 1, z + 1,
-        x, y + 1, z + 1,
+        x + 1, y + 1, z,
         uv, startIndex
       );
       case DOWN -> quad(
-        x, y, z + 1,
-        x + 1, y, z + 1,
         x + 1, y, z,
-        x, y, z,
+        x + 1, y, z + 1,
+        x    , y, z + 1,
+        x    , y, z,
         uv, startIndex
       );
     }
