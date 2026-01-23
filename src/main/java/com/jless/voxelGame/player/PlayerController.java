@@ -1,67 +1,53 @@
 package com.jless.voxelGame.player;
 
-import org.lwjgl.glfw.GLFW;
+import java.lang.Math;
 
-import org.joml.Vector3f;
+import org.joml.*;
 
-import com.jless.voxelGame.Input;
+import com.jless.voxelGame.*;
 
 public class PlayerController {
 
-  private final Player player;
+  private final Vector3f velocity = new Vector3f();
+  private Vector3f pos;
+  private Matrix4f viewMat;
 
-  public float sens = 0.12f;
-  public float flySpeed = 10.0f;
-  public float sprintMult = 3.0f;
+  private float pitch;
+  private float yaw;
+  private float roll;
 
-  public PlayerController(Player player) {
-    this.player = player;
+  private float moveSpeed = 0.1f;
+  private boolean onGround = false;
+
+  public PlayerController(float x, float y, float z) {
+    pos = new Vector3f(x, y, z);
+    pitch = 0;
+    yaw = 0;
+    roll = 0;
+    viewMat = new Matrix4f();
   }
 
-  public void update(float dt) {
-    System.out.println("dx= " + Input.mouseDX() + " dy= " + Input.mouseDY());
-    if(Input.pressed(GLFW.GLFW_KEY_ESCAPE)) {
-      Input.captureMouse(false);
-    }
+  public Matrix4f getViewMatrix() {
+    viewMat.identity();
 
-    if(!Input.isCaptured()) return;
+    viewMat.rotateX(pitch);
+    viewMat.rotateY(yaw);
+    viewMat.rotateZ(roll);
 
-    float dx = Input.mouseDX();
-    float dy = Input.mouseDY();
+    viewMat.translate(-pos.x, -pos.y, -pos.z);
 
-    player.yaw += dx * sens;
-    player.pitch -= dy * sens;
+    return viewMat;
+  }
 
-    if(player.pitch > 89.9f) player.pitch = 89.9f;
-    if(player.pitch < -89.9f) player.pitch = -89.9f;
+  public void processMosue(float dx, float dy) {
+    yaw += (float)Math.toRadians(dx * Consts.MOUSE_SENS);
+    pitch += (float)Math.toRadians(dy * Consts.MOUSE_SENS);
 
-    float speed = flySpeed;
-    if(Input.down(GLFW.GLFW_KEY_LEFT_CONTROL)) {
-      speed *= sprintMult;
-    }
+    if(pitch > Math.toRadians(89.0f)) pitch = (float)Math.toRadians(89.0f);
+    if(pitch < Math.toRadians(-89.0f)) pitch = (float)Math.toRadians(-89.0f);
+  }
 
-    Vector3f move = new Vector3f();
-    float yawRad = (float)Math.toRadians(player.yaw);
-
-    Vector3f forward = new Vector3f(
-      (float)Math.cos(yawRad),
-      0,
-      (float)Math.sin(yawRad)
-    ).normalize();
-
-    Vector3f right = new Vector3f(forward.z, 0, -forward.x).normalize();
-
-    if(Input.down(GLFW.GLFW_KEY_W)) move.add(forward);
-    if(Input.down(GLFW.GLFW_KEY_S)) move.sub(forward);
-    if(Input.down(GLFW.GLFW_KEY_A)) move.add(right);
-    if(Input.down(GLFW.GLFW_KEY_D)) move.sub(right);
-
-    if(Input.down(GLFW.GLFW_KEY_SPACE)) move.y += 1.0f;
-    if(Input.down(GLFW.GLFW_KEY_LEFT_SHIFT)) move.y -= 1.0f;
-
-    if(move.lengthSquared() > 0) {
-      move.normalize().mul(speed * dt);
-      player.position.add(move);
-    }
+  public void update() {
+    //TODO add update in passing world, delta time and jump boolean
   }
 }

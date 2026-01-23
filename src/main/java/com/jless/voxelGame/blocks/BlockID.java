@@ -1,4 +1,4 @@
-package com.jless.voxelGame.world;
+package com.jless.voxelGame.blocks;
 
 public final class BlockID {
   public static final byte AIR = 0;

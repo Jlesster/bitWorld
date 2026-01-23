@@ -1,6 +1,6 @@
-package com.jless.voxelGame.world;
+package com.jless.voxelGame.blocks;
 
-import com.jless.voxelGame.render.TextureAtlas;
+import com.jless.voxelGame.texture.*;
 
 public class Blocks {
 
@@ -127,15 +127,6 @@ public class Blocks {
 
   public static boolean isSolid(byte id) {
     return SOLID[id & 0xFF];
-  }
-
-  public static int getTile(byte id, Face face) {
-    int i = id & 0xFF;
-    return switch(face) {
-      case UP -> TEX_TOP[i];
-      case DOWN -> TEX_BOTTOM[i];
-      default -> TEX_SIDE[i];
-    };
   }
 
   private Blocks() {}
