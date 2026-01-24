@@ -1,0 +1,47 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="
+            http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3
+            https://maven.apache.org/xsd/assembly-1.1.3.xsd">
+
+  <id>fat</id>
+
+  <formats>
+    <format>jar</format>
+  </formats>
+
+  <includeBaseDirectory>false</includeBaseDirectory>
+
+  <!-- All Java classes + dependencies -->
+  <dependencySets>
+    <dependencySet>
+      <useProjectArtifact>true</useProjectArtifact>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+    </dependencySet>
+  </dependencySets>
+
+  <!-- LWJGL + ImGui natives -->
+  <fileSets>
+
+    <!-- Linux -->
+    <fileSet>
+      <directory>${project.build.directory}/natives/linux</directory>
+      <outputDirectory>/natives/linux</outputDirectory>
+    </fileSet>
+
+    <!-- Windows -->
+    <fileSet>
+      <directory>${project.build.directory}/natives/windows</directory>
+      <outputDirectory>/natives/windows</outputDirectory>
+    </fileSet>
+
+    <!-- macOS -->
+    <fileSet>
+      <directory>${project.build.directory}/natives/macos</directory>
+      <outputDirectory>/natives/macos</outputDirectory>
+    </fileSet>
+
+  </fileSets>
+
+</assembly>

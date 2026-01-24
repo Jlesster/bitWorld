@@ -2,10 +2,17 @@ package com.jless.voxelGame;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+import com.jless.voxelGame.texture.*;
+import com.jless.voxelGame.worldGen.*;
+
 public class App {
 
   private void init() {
     Window.create(Consts.W_WIDTH, Consts.W_HEIGHT, Consts.W_TITLE);
+    Shaders.create();
+    Shaders.use();
+    Shaders.setViewMatrix(viewMatrix);
+    Rendering.create();
   }
 
   public void run() {
@@ -19,12 +26,17 @@ public class App {
 
   private void loop() {
     while(!glfwWindowShouldClose(Window.getWindow())) {
+      Rendering.beginFrame();
+      Rendering.renderWorld(world, playerPos);
+      Rendering.endFrame();
       Window.update();
     }
   }
 
   private void cleanup() {
     Window.destroy();
+    Rendering.cleanup();
+    Shaders.cleanup();
   }
 
   public static void main(String[] args) {

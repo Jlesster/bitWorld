@@ -269,6 +269,19 @@ public class Chunk {
     dirty = true;
   }
 
+  public boolean isChunkVisible(Chunk c, Vector3f playerPos) {
+    float chunkX = c.pos.x * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
+    float chunkZ = c.pos.z * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
+
+    float dx = chunkX - playerPos.x;
+    float dz = chunkZ - playerPos.z;
+    float distanceSquared = dx * dx + dz * dz;
+
+    float renderDistance = Consts.INIT_CHUNK_RADS * Consts.CHUNK_SIZE;
+
+    return distanceSquared <= renderDistance * renderDistance;
+  }
+
   private boolean isFaceVisible(World w, int wx, int y, int wz, int face) {
     int[] d = VoxelCuller.DIRS[face];
     byte neighbor = w.getIfLoaded(
