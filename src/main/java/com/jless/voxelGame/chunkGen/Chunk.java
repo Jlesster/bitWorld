@@ -126,8 +126,8 @@ public class Chunk {
 
     float nx = 0, ny = 0, nz = 0;
     float x0 = x, x1 = x + 1;
-    float y0 = x, y1 = y + 1;
-    float z0 = x, z1 = z + 1;
+    float y0 = y, y1 = y + 1;
+    float z0 = z, z1 = z + 1;
 
     float ax = 0, ay = 0, az = 0;
     float bx = 0, by = 0, bz = 0;

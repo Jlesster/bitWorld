@@ -26,7 +26,7 @@ public class App {
     Rendering.create();
 
     world = new World();
-    player = new PlayerController(0, Consts.WORLD_HEIGHT * 2, 0);
+    player = new PlayerController(0, Consts.WORLD_HEIGHT + 2, 0);
 
     world.generateSpawn();
     setupMatrices();

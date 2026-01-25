@@ -59,7 +59,7 @@ public class World {
     Chunk chunk = getChunk(cx, cz);
 
     int lx = ChunkCoords.chunk(x);
-    int lz = ChunkCoords.chunk(x);
+    int lz = ChunkCoords.chunk(z);
 
     return chunk.get(lx, y, lz);
   }

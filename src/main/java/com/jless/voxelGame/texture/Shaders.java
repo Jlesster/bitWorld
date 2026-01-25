@@ -110,8 +110,12 @@ public class Shaders {
     uModelLocation = glGetUniformLocation(shaderProgram, "uModel");
     uTexLocation = glGetUniformLocation(shaderProgram, "uTex");
 
-    if(uProjLocation == -1 || uViewLocation == -1 || uModelLocation == -1 || uTexLocation == -1) {
+    if(uProjLocation == -1 || uViewLocation == -1 || uModelLocation == -1) {
       throw new RuntimeException("Err: Failed to cache uniforms");
+    }
+
+    if(uTexLocation == -1) {
+      System.out.println("Warning: uTex not found");
     }
   }
 
@@ -138,9 +142,11 @@ public class Shaders {
 
   public static void setTextureUnit(int unit) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
+    // if(instance.uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
 
-    glUniform1i(instance.uTexLocation, unit);
+    if(instance.uTexLocation != -1) {
+      glUniform1i(instance.uTexLocation, unit);
+    }
   }
 
   public static void cleanup() {

@@ -87,11 +87,14 @@ public class Rendering {
   public static void renderWorld(World w, Vector3f playerPos) {
     ensureTexBound();
 
+    int chunksRendered = 0;
     for(Chunk chunk : w.getLoadedChunks()) {
       if(Chunk.isChunkVisible(chunk, playerPos)) {
         chunk.ensureUploaded(w);
         chunk.drawVBO();
+        chunksRendered++;
       }
     }
+    System.out.println("Chunks rendered: " + chunksRendered);
   }
 }
