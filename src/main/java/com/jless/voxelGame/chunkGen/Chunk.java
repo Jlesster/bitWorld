@@ -23,7 +23,7 @@ public class Chunk {
 
   private boolean greedyMeshingEnabled = Consts.ENABLE_GREEDY_MESHING;
   private boolean dirty = true;
-  private boolean uploaded = false;
+  public boolean uploaded = false;
   private int vertCount = 0;
   private int vboID = 0;
   private int vaoID = 0;

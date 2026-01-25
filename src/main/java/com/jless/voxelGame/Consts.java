@@ -9,6 +9,7 @@ public final class Consts {
 
   public static final int VSYNC = 1;
   public static final float FOV = 90.0f;
+  public static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;
 
   public static final int CHUNK_SIZE = 16;
   public static final int WORLD_HEIGHT = 256;

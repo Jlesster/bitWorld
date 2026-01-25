@@ -89,12 +89,11 @@ public class Rendering {
 
     int chunksRendered = 0;
     for(Chunk chunk : w.getLoadedChunks()) {
-      if(Chunk.isChunkVisible(chunk, playerPos)) {
+      if(chunk.uploaded && Chunk.isChunkVisible(chunk, playerPos)) {
         chunk.ensureUploaded(w);
         chunk.drawVBO();
         chunksRendered++;
       }
     }
-    System.out.println("Chunks rendered: " + chunksRendered);
   }
 }

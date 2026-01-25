@@ -6,6 +6,7 @@ import java.util.*;
 import org.joml.*;
 
 import com.jless.voxelGame.*;
+import com.jless.voxelGame.Thread;
 import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.chunkGen.*;
 
@@ -34,6 +35,19 @@ public class World {
     for(int cx = -r; cx <= r; cx++) {
       for(int cz = -r; cz <= r; cz++) {
         getChunk(cx, cz);
+      }
+    }
+  }
+
+  public void generateSpawnAsync(Thread threadManager) {
+    int r = Consts.INIT_CHUNK_RADS;
+    for(int cx = -r; cx <= r; cx++) {
+      for(int cz = -r; cz <= r; cz++) {
+        final int finalCX = cx;
+        final int finalCZ = cz;
+        threadManager.generateChunkAsync(cx, cz).thenAccept(chunk -> {
+          chunks.put(World.chunkKey(finalCX, finalCZ), chunk);
+        });
       }
     }
   }
