@@ -52,6 +52,7 @@ public void run() {
 
   private void loop() {
     while(!glfwWindowShouldClose(Window.getWindow())) {
+      Window.update();
       Input.update();
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
@@ -66,7 +67,6 @@ public void run() {
       Vector3f playerPos = player.pos;
       Rendering.renderWorld(world, playerPos);
       Rendering.endFrame();
-      Window.update();
     }
   }
 

@@ -8,6 +8,7 @@ public class Input {
 	private static boolean[] mouseButtons = new boolean[GLFW_MOUSE_BUTTON_LAST];
 	private static double mouseX, mouseY;
 	private static double lastMouseX, lastMouseY;
+	private static boolean firstMouse = true;
 
 	public static void update() {
 		lastMouseX = mouseX;
@@ -28,6 +29,11 @@ public class Input {
   	});
 
   	glfwSetCursorPosCallback(w, (window, xpos, ypos) -> {
+  		if(firstMouse) {
+  			lastMouseX = xpos;
+  			lastMouseY = ypos;
+  			firstMouse = false;
+  		}
   		mouseX = xpos;
   		mouseY = ypos;
   	});

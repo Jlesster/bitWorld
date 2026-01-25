@@ -21,6 +21,7 @@ public class Chunk {
   public final Vector3i pos;
   public final BlockMap blocks;
 
+  private boolean greedyMeshingEnabled = Consts.ENABLE_GREEDY_MESHING;
   private boolean dirty = true;
   private boolean uploaded = false;
   private int vertCount = 0;
@@ -50,6 +51,15 @@ public class Chunk {
   }
 
   private FloatBuffer buildMeshBuffer(World w) {
+    if(greedyMeshingEnabled) {
+      GreedyMesher mesher = new GreedyMesher();
+      return mesher.buildGreedyMesh(this, w);
+    } else {
+      return buildNativeMesh(w);
+    }
+  }
+
+  private FloatBuffer buildNativeMesh(World w) {
     int initFloats = 800_000;
     FloatBuffer buf = BufferUtils.createFloatBuffer(initFloats);
 
@@ -70,7 +80,7 @@ public class Chunk {
           int wz = baseZ + z;
 
           for(int face = 0; face < 6; face++) {
-            if(isFaceVisible(w, wx, y, wz, face)) {
+            if(VoxelCuller.isFaceVisible(w, wx, y, wz, face)) {
               count += emitFaceAsTriangle(buf, wx, y, wz, face, id);
             }
           }
@@ -83,10 +93,11 @@ public class Chunk {
     return buf;
   }
 
+
   public void ensureUploaded(World w) {
     if(!dirty && uploaded) return;
 
-    FloatBuffer data = buildMeshBuffer(w);
+    FloatBuffer data = buildNativeMesh(w);
     uploadToGPU(data);
     dirty = false;
     uploaded = true;
@@ -252,7 +263,7 @@ public class Chunk {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
-  private static void getUVPacked(int packed, float[] out) {
+  public static void getUVPacked(int packed, float[] out) {
     int tx = TextureAtlas.tileX(packed);
     int ty = TextureAtlas.tileY(packed);
 
@@ -285,16 +296,6 @@ public class Chunk {
     float renderDistance = Consts.INIT_CHUNK_RADS * Consts.CHUNK_SIZE;
 
     return distanceSquared <= renderDistance * renderDistance;
-  }
-
-  private boolean isFaceVisible(World w, int wx, int y, int wz, int face) {
-    int[] d = VoxelCuller.DIRS[face];
-    byte neighbor = w.getIfLoaded(
-      wx + d[0],
-      y + d[1],
-      wz + d[2]
-    );
-    return !Blocks.SOLID[neighbor];
   }
 
   public void cleanup() {
