@@ -33,12 +33,12 @@ public class Rendering {
   }
 
   private void loadTexAtlas() {
-    texAtlas = TextureLoader.loadResource("/resources/Tileset.png", false);
+    texAtlas = TextureLoader.loadResource("/Tileset.png", false);
   }
 
   private static void ensureTexBound() {
     if(!texBound) {
-      glActivateTexture(GL_TEXTURE0);
+      glActiveTexture(GL_TEXTURE0);
       texAtlas.bind();
       Shaders.setTextureUnit(0);
       texBound = true;
@@ -88,7 +88,7 @@ public class Rendering {
     ensureTexBound();
 
     for(Chunk chunk : w.getLoadedChunks()) {
-      if(chunk.isChunkVisible(chunk, playerPos)) {
+      if(Chunk.isChunkVisible(chunk, playerPos)) {
         chunk.ensureUploaded(w);
         chunk.drawVBO();
       }

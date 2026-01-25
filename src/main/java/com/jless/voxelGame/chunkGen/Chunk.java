@@ -3,6 +3,7 @@ package com.jless.voxelGame.chunkGen;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 import java.nio.*;
 
@@ -24,6 +25,7 @@ public class Chunk {
   private boolean uploaded = false;
   private int vertCount = 0;
   private int vboID = 0;
+  private int vaoID = 0;
 
   public Chunk(Vector3i pos) {
     this.pos = new Vector3i(pos);
@@ -91,12 +93,15 @@ public class Chunk {
   }
 
   public void uploadToGPU(FloatBuffer data) {
-    if(vboID == 0) {
-      vboID = glGenBuffers();
-    }
+    if(vboID == 0) vboID = glGenBuffers();
+    if(vaoID == 0) vaoID = glGenVertexArrays();
+    glBindVertexArray(vaoID);
     glBindBuffer(GL_ARRAY_BUFFER, vboID);
     glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, vertCount);
+    glBindVertexArray(0);
   }
 
   private int emitFaceAsTriangle(FloatBuffer b, int x, int y, int z, int face, byte id) {
@@ -269,7 +274,7 @@ public class Chunk {
     dirty = true;
   }
 
-  public boolean isChunkVisible(Chunk c, Vector3f playerPos) {
+  public static boolean isChunkVisible(Chunk c, Vector3f playerPos) {
     float chunkX = c.pos.x * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
     float chunkZ = c.pos.z * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
 
