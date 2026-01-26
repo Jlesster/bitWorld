@@ -9,6 +9,7 @@ import org.lwjgl.*;
 
 import org.joml.*;
 
+import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.player.*;
 import com.jless.voxelGame.texture.*;
 import com.jless.voxelGame.worldGen.*;
@@ -16,7 +17,7 @@ import com.jless.voxelGame.worldGen.*;
 public class App {
 
   private World world;
-  private Thread threadManager;
+  private ChunkThreadManager threadManager;
   private PlayerController player;
   private FloatBuffer projMatrix;
   private FloatBuffer viewMatrix;
@@ -26,10 +27,17 @@ public class App {
     Shaders.create();
     Rendering.create();
 
-    world = new World();
-    player = new PlayerController(0, Consts.WORLD_HEIGHT + 2, 0);
+    System.out.println("Checking blocks init");
+    if(Blocks.SOLID == null) {
+      System.err.println("Err: Blocks.SOLID is null");
+    } else {
+      System.out.println("Blocks.SOLID initialised");
+    }
 
-    threadManager = new Thread(world);
+    world = new World();
+    player = new PlayerController(0, Consts.WORLD_HEIGHT, 0);
+
+    threadManager = new ChunkThreadManager(world);
 
     world.generateSpawnAsync(threadManager);
     setupMatrices();
@@ -54,23 +62,26 @@ public void run() {
   }
 
   private void loop() {
+    System.out.println("Main render loop starting on thread: " + Thread.currentThread().getName());
     while(!glfwWindowShouldClose(Window.getWindow())) {
       Window.update();
-      Input.update();
       threadManager.processUploads();
-
-      boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
-      player.update(world, 0.016f, jumpPressed);
-      player.getViewMatrix().get(viewMatrix);
 
       Shaders.use();
       Shaders.setViewMatrix(viewMatrix);
       Shaders.setProjMatrix(projMatrix);
+
+      boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
+      player.update(world, 0.016f, jumpPressed);
+      player.getViewMatrix().get(viewMatrix);
+      Input.update();
+
       Rendering.beginFrame();
 
       Vector3f playerPos = player.pos;
       Rendering.renderWorld(world, playerPos);
       Rendering.endFrame();
+      glfwSwapBuffers(Window.getWindow());
     }
   }
 
@@ -78,6 +89,7 @@ public void run() {
     Window.destroy();
     Rendering.cleanup();
     Shaders.cleanup();
+    ChunkThreadManager.cleanup();
   }
 
   public static void main(String[] args) {

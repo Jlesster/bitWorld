@@ -19,9 +19,20 @@ public class VoxelCuller {
   }
 
   public static boolean isFaceVisible(World world, int wX, int wY, int wZ, int faceID) {
+    if(world == null) {
+      System.err.println("Err: world is null");
+      return false;
+    }
     int[] d = DIRS[faceID];
-    byte neighbor = world.getIfLoaded(wX + d[0], wY + d[1], wZ + d[2]);
-    return !Blocks.SOLID[neighbor];
+    int nx = wX + d[0];
+    int ny = wY + d[1];
+    int nz = wZ + d[2];
+    byte neighbor = world.getIfLoaded(nx, ny, nz);
+    if(Blocks.SOLID == null) {
+      System.err.println("Err: Blocks.SOLID is null");
+      return true;
+    }
+    return !Blocks.SOLID[neighbor & 0xFF];
   }
 
   public static boolean isFaceVisible(Chunk chunk, World world, int lX, int lY, int lZ, int faceID) {

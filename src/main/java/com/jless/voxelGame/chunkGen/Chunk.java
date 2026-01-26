@@ -22,11 +22,11 @@ public class Chunk {
   public final BlockMap blocks;
 
   private boolean greedyMeshingEnabled = Consts.ENABLE_GREEDY_MESHING;
-  private boolean dirty = true;
-  public boolean uploaded = false;
-  private int vertCount = 0;
-  private int vboID = 0;
-  private int vaoID = 0;
+  public boolean dirty = true;
+  public volatile boolean uploaded = false;
+  public int vertCount = 0;
+  public int vboID = 0;
+  public int vaoID = 0;
 
   public Chunk(Vector3i pos) {
     this.pos = new Vector3i(pos);
@@ -50,6 +50,15 @@ public class Chunk {
     return blocks;
   }
 
+  public FloatBuffer buildMesh(World w) {
+    FloatBuffer data = buildMeshBuffer(w);
+    if(greedyMeshingEnabled) {
+      this.vertCount = data.limit() / 8;
+    }
+    System.out.println("buildMesh: pos=" + pos + " dataLimit=" + data.limit() + " vertCount=" + vertCount);
+    return data;
+  }
+
   private FloatBuffer buildMeshBuffer(World w) {
     if(greedyMeshingEnabled) {
       GreedyMesher mesher = new GreedyMesher();
@@ -60,7 +69,7 @@ public class Chunk {
   }
 
   private FloatBuffer buildNativeMesh(World w) {
-    int initFloats = 800_000;
+    int initFloats = 2_000_000;
     FloatBuffer buf = BufferUtils.createFloatBuffer(initFloats);
 
     BlockMap map = getBlockMap();
@@ -70,22 +79,34 @@ public class Chunk {
 
     int count = 0;
 
-    for(int x = 0; x < map.sizeX(); x++) {
-      for(int y = 0; y < map.sizeY(); y++) {
-        for(int z = 0; z < map.sizeZ(); z++) {
-          byte id = map.get(x, y, z);
-          if(!Blocks.SOLID[id]) continue;
+    try {
+      for(int x = 0; x < map.sizeX(); x++) {
+        for(int y = 0; y < map.sizeY(); y++) {
+          for(int z = 0; z < map.sizeZ(); z++) {
+            byte id = map.get(x, y, z);
+            if(!Blocks.SOLID[id]) continue;
 
-          int wx = baseX + x;
-          int wz = baseZ + z;
+            int wx = baseX + x;
+            int wz = baseZ + z;
 
-          for(int face = 0; face < 6; face++) {
-            if(VoxelCuller.isFaceVisible(w, wx, y, wz, face)) {
-              count += emitFaceAsTriangle(buf, wx, y, wz, face, id);
+            for(int face = 0; face < 6; face++) {
+            try {
+                if(VoxelCuller.isFaceVisible(w, wx, y, wz, face)) {
+                  int packedTile = getTextureForFace(id, face);
+                  count += emitFaceAsTriangle(buf, wx, y, wz, face, id, packedTile);
+                }
+              } catch(Exception e) {
+                System.err.println("Error checking vace visibilty at chynk " + pos + " local(" + x + ", " + y + ", " + z + ") world(" + wx + ", " + y + ", " + wz + ") face=" + face);
+                throw e;
+              }
             }
           }
         }
       }
+    } catch(Exception e) {
+      System.err.println("Error in buildNativeMesh for chunk " + pos);
+      e.printStackTrace();
+      throw new RuntimeException("Mesh build failed", e);
     }
 
     vertCount = count;
@@ -97,38 +118,55 @@ public class Chunk {
   public void ensureUploaded(World w) {
     if(!dirty && uploaded) return;
 
-    FloatBuffer data = buildNativeMesh(w);
+    FloatBuffer data = buildMesh(w);
     uploadToGPU(data);
-    dirty = false;
-    uploaded = true;
   }
 
   public void uploadToGPU(FloatBuffer data) {
+    if(data == null) {
+      System.err.println("Err: uploadToGPU called with null data");
+      return;
+    }
     if(vboID == 0) vboID = glGenBuffers();
     if(vaoID == 0) vaoID = glGenVertexArrays();
+    System.out.println("DEBUG: uploadToGPU: vaoID: " + vaoID + " vboID: " + vboID + " dataSize: " + data.limit());
     glBindVertexArray(vaoID);
     glBindBuffer(GL_ARRAY_BUFFER, vboID);
     glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
+
+    int stride = 8 * Float.BYTES;
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0L);
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3L * Float.BYTES);
+    glVertexAttribPointer(2,2, GL_FLOAT, false, stride, 6L * Float.BYTES);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    glDrawArrays(GL_TRIANGLES, 0, vertCount);
-    glBindVertexArray(0);
+
+    dirty = false;
+    uploaded = true;
+    System.out.println("DEBUG uploadToGPU complete: uploaded=" + uploaded);
   }
 
-  private int emitFaceAsTriangle(FloatBuffer b, int x, int y, int z, int face, byte id) {
-    int packedTile;
-    if(face == 1) packedTile = Blocks.TEX_FRONT[id];
-    if(face == 2) packedTile = Blocks.TEX_TOP[id];
-    if(face == 3) packedTile = Blocks.TEX_BOTTOM[id];
-    else packedTile = Blocks.TEX_SIDE[id];
+  private int getTextureForFace(byte id, int face) {
+    return switch(face) {
+      case 1 -> Blocks.TEX_FRONT[id];
+      case 2 -> Blocks.TEX_TOP[id];
+      case 3 -> Blocks.TEX_BOTTOM[id];
+      default -> Blocks.TEX_SIDE[id];
+    };
+  }
+
+  private int emitFaceAsTriangle(FloatBuffer b, int x, int y, int z, int face, byte id, int packedTile) {
 
     float[] uv = new float[4];
     getUVPacked(packedTile, uv);
 
     float u0 = uv[0];
-    float v0 = uv[1];
+    float v0 = uv[3];
     float u1 = uv[2];
-    float v1 = uv[3];
+    float v1 = uv[1];
 
     float au = 0, av = 0;
     float bu = 0, bv = 0;
@@ -241,26 +279,14 @@ public class Chunk {
 
   public void drawVBO() {
     if(!uploaded || vboID == 0 || vertCount == 0) return;
-
-    glBindBuffer(GL_ARRAY_BUFFER, vboID);
-
-    int stride = 8 * Float.BYTES;
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0L);
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3L * Float.BYTES);
-    glVertexAttribPointer(2, 2, GL_FLOAT, false, stride, 6L * Float.BYTES);
-
+    glBindVertexArray(vaoID);
     glDrawArrays(GL_TRIANGLES, 0, vertCount);
+    glBindVertexArray(0);
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    int error = glGetError();
+    if(error != GL_NO_ERROR) {
+      System.err.println("OpenGL Error in drawVBO" + error);
+    }
   }
 
   public static void getUVPacked(int packed, float[] out) {
@@ -281,9 +307,14 @@ public class Chunk {
     out[2] = u1; out[3] = v1;
   }
 
-  public void markDirty() {
+  private synchronized boolean isDirty() { return dirty; }
+  private synchronized boolean isUploaded() { return uploaded; }
+  private synchronized void setUploaded(boolean uploaded) { this.uploaded = uploaded; }
+
+  public synchronized void markDirty() {
     dirty = true;
   }
+
 
   public static boolean isChunkVisible(Chunk c, Vector3f playerPos) {
     float chunkX = c.pos.x * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;

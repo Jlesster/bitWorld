@@ -16,8 +16,8 @@ public class PlayerController {
   public Vector3f pos;
   private Matrix4f viewMat;
 
-  private float pitch;
-  private float yaw;
+  public float pitch;
+  public float yaw;
   private float roll;
 
   private float moveSpeed = 0.1f;
@@ -40,7 +40,9 @@ public class PlayerController {
     viewMat.rotateY(yaw);
     viewMat.rotateZ(roll);
 
-    viewMat.translate(-pos.x, -pos.y, -pos.z);
+    float eyeheight = Consts.PLAYER_HEIGHT * 1.9f;
+
+    viewMat.translate(-pos.x, (-pos.y + eyeheight), -pos.z);
 
     return viewMat;
   }
@@ -134,7 +136,7 @@ public class PlayerController {
       for(int y = 0; y < 2; y++) {
         for(int z = 0; z < 2; z++) {
           float checkX = testPos.x + (x == 0 ? -hW : hW);
-          float checkY = testPos.y + (y == 0 ? Consts.EYE_HEIGHT : playerH - Consts.EYE_HEIGHT);
+          float checkY = testPos.y + (y == 0 ? 0.01f : playerH);
           float checkZ = testPos.z + (z == 0 ? -hW : hW);
 
           int blockX = (int)Math.floor(checkX);
@@ -160,8 +162,20 @@ public class PlayerController {
   }
 
   public void update(World world, float dt, boolean jumpPressed) {
+    updateCameraRotation();
     handleInput(dt);
     applyPhysics(world, dt, jumpPressed);
-    updateCameraRotation();
+  }
+
+  public Vector3f getForwardDir() {
+    float cosYaw = (float)Math.cos(yaw);
+    float sinYaw = (float)Math.sin(yaw);
+    return new Vector3f(-sinYaw, 0, -cosYaw).normalize();
+  }
+
+  public Vector3f getRightDir() {
+    float cosYaw = (float)Math.cos(yaw);
+    float sinYaw = (float)Math.sin(yaw);
+    return new Vector3f(cosYaw, 0, -sinYaw).normalize();
   }
 }

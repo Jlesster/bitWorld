@@ -1,23 +1,22 @@
 package com.jless.voxelGame.worldGen;
 
 import java.lang.Math;
-import java.util.*;
+import java.util.concurrent.*;
 
 import org.joml.*;
 
 import com.jless.voxelGame.*;
-import com.jless.voxelGame.Thread;
 import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.chunkGen.*;
 
 public class World {
 
-  private final Map<Long, Chunk> chunks = new HashMap<>();
-  private static final Map<Long, ArrayList<QueuedBlock>> queue = new HashMap();
+  public final ConcurrentHashMap<Long, Chunk> chunks = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Long, ConcurrentLinkedQueue<QueuedBlock>> queue = new ConcurrentHashMap();
 
   public static final Perlin NOISE = new Perlin(Consts.SEED);
 
-  public Chunk getChunk(int cx, int cz) {
+  public synchronized Chunk getChunk(int cx, int cz) {
     long key = chunkKey(cx, cz);
     Chunk c = chunks.get(key);
     if(c != null) return c;
@@ -39,20 +38,25 @@ public class World {
     }
   }
 
-  public void generateSpawnAsync(Thread threadManager) {
+  public void addChunkDirectly(Chunk chunk) {
+    long key = chunkKey(chunk.pos.x, chunk.pos.z);
+    chunks.put(key, chunk);
+  }
+
+  public void generateSpawnAsync(ChunkThreadManager threadManager) {
     int r = Consts.INIT_CHUNK_RADS;
     for(int cx = -r; cx <= r; cx++) {
       for(int cz = -r; cz <= r; cz++) {
-        final int finalCX = cx;
-        final int finalCZ = cz;
-        threadManager.generateChunkAsync(cx, cz).thenAccept(chunk -> {
-          chunks.put(World.chunkKey(finalCX, finalCZ), chunk);
-        });
+        threadManager.generateChunkAsync(cx, cz);
       }
     }
   }
 
   public byte getIfLoaded(int x, int y, int z) {
+    if(y < 0 || y >= Consts.WORLD_HEIGHT) {
+      return BlockID.AIR;
+    }
+
     int cx = ChunkCoords.chunk(x);
     int cz = ChunkCoords.chunk(z);
 
@@ -72,8 +76,8 @@ public class World {
 
     Chunk chunk = getChunk(cx, cz);
 
-    int lx = ChunkCoords.chunk(x);
-    int lz = ChunkCoords.chunk(z);
+    int lx = ChunkCoords.local(x);
+    int lz = ChunkCoords.local(z);
 
     return chunk.get(lx, y, lz);
   }
@@ -141,18 +145,18 @@ public class World {
     return chunks.get(chunkKey(cx, cz));
   }
 
-  public void queueBlock(int wx, int wy, int wz, byte id) {
+  public static synchronized void queueBlock(int wx, int wy, int wz, byte id) {
     int cx = Math.floorDiv(wx, Consts.CHUNK_SIZE);
     int cz = Math.floorDiv(wz, Consts.CHUNK_SIZE);
 
     long key = chunkKey(cx, cz);
-    queue.computeIfAbsent(key, k -> new ArrayList<>()).add(new QueuedBlock(wx, wy, wz, id));
+    queue.computeIfAbsent(key, k -> new ConcurrentLinkedQueue<>()).add(new QueuedBlock(wx, wy, wz, id));
   }
 
   public static void applyQueuedBlocks(Chunk c) {
     long key = chunkKey(c.pos.x, c.pos.z);
 
-    ArrayList<QueuedBlock> list = queue.remove(key);
+    ConcurrentLinkedQueue<QueuedBlock> list = queue.remove(key);
     if(list == null) return;
 
     BlockMap map = c.getBlockMap();

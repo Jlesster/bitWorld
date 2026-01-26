@@ -57,7 +57,6 @@ public class Window {
   }
 
   public static void update() {
-    glfwSwapBuffers(instance.window);
     glfwPollEvents();
   }
 
