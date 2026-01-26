@@ -18,7 +18,7 @@ public final class Consts {
 
   public static final int CHUNK_SIZE = 16;
   public static final int WORLD_HEIGHT = 128;
-  public static final int INIT_CHUNK_RADS = 12;
+  public static final int INIT_CHUNK_RADS = 16;
   public static final boolean ENABLE_GREEDY_MESHING = false;
 
   public static final long SEED = 1337L; //TODO rng static method in world gen

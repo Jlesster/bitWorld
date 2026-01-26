@@ -13,15 +13,16 @@ import com.jless.voxelGame.worldGen.*;
 public class PlayerController {
 
   private Vector3f velocity = new Vector3f();
-  public Vector3f pos;
+  public static Vector3f pos;
   private Matrix4f viewMat;
 
   public float pitch;
-  public float yaw;
+  public static float yaw;
   private float roll;
 
   private float moveSpeed = 0.1f;
   private boolean onGround = false;
+  private boolean wishMoving = false;
 
   public PlayerController(float x, float y, float z) {
     pos = new Vector3f(x, y, z);
@@ -40,9 +41,9 @@ public class PlayerController {
     viewMat.rotateY(yaw);
     viewMat.rotateZ(roll);
 
-    float eyeheight = Consts.PLAYER_HEIGHT * 1.9f;
+    float eyeHeight = Consts.EYE_HEIGHT;
 
-    viewMat.translate(-pos.x, (-pos.y + eyeheight), -pos.z);
+    viewMat.translate(-pos.x, -(pos.y + eyeHeight), -pos.z);
 
     return viewMat;
   }
@@ -56,25 +57,47 @@ public class PlayerController {
   }
 
   private void handleInput(float dt) {
-    Vector3f moveDir = new Vector3f(0, 0, 0);
+    wishMoving = false;
+    Vector3f wishDir = new Vector3f();
 
     float cosYaw = (float)Math.cos(yaw);
     float sinYaw = (float)Math.sin(yaw);
 
-    Vector3f forward = new Vector3f(-sinYaw, 0, -cosYaw).normalize();
-    Vector3f right = new Vector3f(cosYaw, 0, -sinYaw).normalize();
+    Vector3f forward = new Vector3f(sinYaw, 0, -cosYaw);
+    Vector3f right = new Vector3f(cosYaw, 0, sinYaw);
 
-    if(Input.isKeyPressed(GLFW_KEY_W)) moveDir.add(forward);
-    if(Input.isKeyPressed(GLFW_KEY_S)) moveDir.sub(forward);
+    if(Input.isKeyPressed(GLFW_KEY_W)) {
+      wishDir.add(forward);
+      wishMoving = true;
+    }
+    if(Input.isKeyPressed(GLFW_KEY_S)) {
+      wishDir.sub(forward) ;
+      wishMoving = true;
+    }
 
-    if(Input.isKeyPressed(GLFW_KEY_D)) moveDir.add(right);
-    if(Input.isKeyPressed(GLFW_KEY_A)) moveDir.sub(right);
+    if(Input.isKeyPressed(GLFW_KEY_D)) {
+      wishDir.add(right);
+      wishMoving = true;
+    }
+    if(Input.isKeyPressed(GLFW_KEY_A)) {
+      wishDir.sub(right);
+      wishMoving = true;
+    }
 
-    if(moveDir.lengthSquared() > 0) {
-      moveDir.normalize();
+    if(wishDir.lengthSquared() > 0) {
+      wishDir.normalize();
       float currentSpeed = onGround ? Consts.GROUND_ACCEL * dt : Consts.AIR_ACCEL * dt;
-      velocity.x += moveDir.x * currentSpeed;
-      velocity.z += moveDir.z * currentSpeed;
+      float maxSpeed = onGround ? Consts.MAX_GROUND_SPEED : Consts.MAX_AIR_SPEED;
+      float accel = onGround ? Consts.GROUND_ACCEL : Consts.AIR_ACCEL;
+
+      Vector3f horizVel = new Vector3f(velocity.x, 0, velocity.z);
+
+      Vector3f targetVel = new Vector3f(wishDir).mul(maxSpeed);
+
+      horizVel.lerp(targetVel, accel * dt);
+
+      velocity.x = horizVel.x;
+      velocity.z = horizVel.z;
     }
   }
 
@@ -86,17 +109,9 @@ public class PlayerController {
       onGround = false;
     }
 
-    float friction = onGround ? Consts.GROUND_FRICTION * dt : 0;
-    velocity.x *= (1 - friction);
-    velocity.z *= (1 - friction);
-
-    float maxSpeed = onGround ? Consts.MAX_GROUND_SPEED : Consts.MAX_AIR_SPEED;
-    float horizontalSpeed = (float)Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-
-    if(horizontalSpeed > maxSpeed) {
-      float scale = maxSpeed / horizontalSpeed;
-      velocity.x *= scale;
-      velocity.z *= scale;
+    if(onGround && wishMoving == false) {
+      velocity.x *= 0.8f;
+      velocity.z *= 0.8f;
     }
 
     moveAndCollide(world, dt);
@@ -104,28 +119,92 @@ public class PlayerController {
 
   private void moveAndCollide(World world, float dt) {
     Vector3f stepPos = new Vector3f(pos);
+    boolean collidedY = false;
 
     stepPos.x += velocity.x * dt;
-    if(checkCollision(world, stepPos)) {
+    if(checkAABBCollision(world, stepPos)) {
       stepPos.x = pos.x;
       velocity.x = 0;
     }
 
     stepPos.y += velocity.y * dt;
-    if(checkCollision(world, stepPos)) {
+    if(checkAABBCollision(world, stepPos)) {
       stepPos.y = pos.y;
       if(velocity.y < 0) onGround = true;
       velocity.y = 0;
-    } else {
-      onGround = false;
+      collidedY = true;
+      stepPos.y = (float)Math.floor(stepPos.y + 0.001f);
     }
 
     stepPos.z += velocity.z * dt;
-    if(checkCollision(world, stepPos)) {
+    if(checkAABBCollision(world, stepPos)) {
       stepPos.z = pos.z;
       velocity.z = 0;
     }
+
+    if(!collidedY && velocity.y != 0) {
+      onGround = false;
+    }
+
     pos.set(stepPos);
+  }
+
+  private boolean checkAABBCollision(World w, Vector3f testPos) {
+    float hw = Consts.PLAYER_WIDTH / 2.0f;
+    float height = Consts.PLAYER_HEIGHT;
+
+    float minX = testPos.x - hw;
+    float maxX = testPos.x + hw;
+    float minY = testPos.y;
+    float maxY = testPos.y + height;
+    float minZ = testPos.z - hw;
+    float maxZ = testPos.z + hw;
+
+    int blockMinX = (int)Math.floor(minX);
+    int blockMaxX = (int)Math.floor(maxX);
+    int blockMinY = (int)Math.floor(minY);
+    int blockMaxY = (int)Math.floor(maxY);
+    int blockMinZ = (int)Math.floor(minZ);
+    int blockMaxZ = (int)Math.floor(maxZ);
+
+    for(int bx = blockMinX; bx <= blockMaxX; bx++) {
+      for(int by = blockMinY; by <= blockMaxY; by++) {
+        for(int bz = blockMinZ; bz <= blockMaxZ; bz++) {
+          byte blockID = w.getIfLoaded(bx, by, bz);
+
+          if(Blocks.SOLID[blockID]) {
+            if(aabbIntersects(minX, minY, minZ, maxX, maxY, maxZ,
+                              bx, by, bz, bx + 1, by + 1, bz + 1)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean aabbIntersects(float min1X, float min1Y, float min1Z,
+                                 float max1X, float max1Y, float max1Z,
+                                 float min2X, float min2Y, float min2Z,
+                                 float max2X, float max2Y, float max2Z
+  ) {
+    return (min1X < max2X && max1X > min2X) &&
+           (min1Y < max2Y && max1Y > min2Y) &&
+           (min1Z < max2Z && max1Z > min2Z);
+  }
+
+  public static boolean wouldCollideWithBlock(int bx, int by, int bz) {
+    float minX = pos.x - Consts.PLAYER_WIDTH / 2f;
+    float minY = pos.y;
+    float minZ = pos.z - Consts.PLAYER_WIDTH / 2f;
+    float maxX = pos.x + Consts.PLAYER_WIDTH / 2f;
+    float maxY = pos.y + Consts.PLAYER_HEIGHT;
+    float maxZ = pos.x + Consts.PLAYER_WIDTH / 2f;
+
+    return bx < maxX && bx + 1 > minX &&
+           by < maxY && by + 1 > minY &&
+           bz < maxZ && bz + 1 > minZ;
   }
 
   private boolean checkCollision(World world, Vector3f testPos) {
@@ -167,7 +246,15 @@ public class PlayerController {
     applyPhysics(world, dt, jumpPressed);
   }
 
-  public Vector3f getForwardDir() {
+  public static Vector3f getEyePos() {
+    return new Vector3f(
+      pos.x,
+      pos.y + Consts.EYE_HEIGHT,
+      pos.z
+    );
+  }
+
+  public static Vector3f getForwardDir() {
     float cosYaw = (float)Math.cos(yaw);
     float sinYaw = (float)Math.sin(yaw);
     return new Vector3f(-sinYaw, 0, -cosYaw).normalize();

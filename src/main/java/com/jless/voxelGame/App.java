@@ -17,8 +17,9 @@ import com.jless.voxelGame.worldGen.*;
 public class App {
 
   private World world;
+  private Player player;
   private ChunkThreadManager threadManager;
-  private PlayerController player;
+  private PlayerController playerController;
   private FloatBuffer projMatrix;
   private FloatBuffer viewMatrix;
 
@@ -35,7 +36,8 @@ public class App {
     }
 
     world = new World();
-    player = new PlayerController(0, Consts.WORLD_HEIGHT, 0);
+    playerController = new PlayerController(0, Consts.WORLD_HEIGHT + 1.0f, 0);
+    player = new Player(world);
 
     threadManager = new ChunkThreadManager(world);
 
@@ -72,13 +74,14 @@ public void run() {
       Shaders.setProjMatrix(projMatrix);
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
-      player.update(world, 0.016f, jumpPressed);
-      player.getViewMatrix().get(viewMatrix);
+      playerController.update(world, 0.016f, jumpPressed);
+      playerController.getViewMatrix().get(viewMatrix);
       Input.update();
+      player.blockManip();
 
       Rendering.beginFrame();
 
-      Vector3f playerPos = player.pos;
+      Vector3f playerPos = playerController.pos;
       Rendering.renderWorld(world, playerPos);
       Rendering.endFrame();
       glfwSwapBuffers(Window.getWindow());

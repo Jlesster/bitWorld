@@ -2,6 +2,8 @@ package com.jless.voxelGame;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+import com.jless.voxelGame.player.*;
+
 public class Input {
 
 	private static boolean[] keys = new boolean[GLFW_KEY_LAST];
@@ -25,6 +27,9 @@ public class Input {
   	glfwSetMouseButtonCallback(w, (window, button, action, mods) -> {
   		if(button >= 0 && button < mouseButtons.length) {
   			mouseButtons[button] = (action == GLFW_PRESS);
+  		}
+  		if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+  			Player.breakReq = true;
   		}
   	});
 

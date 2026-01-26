@@ -223,8 +223,8 @@ public class Chunk {
       case 3 -> {
         nx = 0; ny = -1; nz = 0;
         ax = x0; ay = y0; az = z0;
-        bx = x1; by = y1; bz = z0;
-        cx = x1; cy = y1; cz = z1;
+        bx = x1; by = y0; bz = z0;
+        cx = x1; cy = y0; cz = z1;
         dx = x0; dy = y0; dz = z1;
 
         au = u0; av = v0;
@@ -246,7 +246,7 @@ public class Chunk {
       }
       case 5 -> {
         nx = 0; ny = 0; nz = -1;
-        ax = x1; ay = y0; az = z0;
+        ax = x0; ay = y0; az = z0;
         bx = x0; by = y1; bz = z0;
         cx = x1; cy = y1; cz = z0;
         dx = x1; dy = y0; dz = z0;
