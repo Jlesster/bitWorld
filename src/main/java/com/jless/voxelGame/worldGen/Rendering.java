@@ -11,6 +11,7 @@ import org.lwjgl.*;
 
 import org.joml.*;
 
+import com.jless.voxelGame.*;
 import com.jless.voxelGame.chunkGen.*;
 import com.jless.voxelGame.texture.*;
 
@@ -79,6 +80,19 @@ public class Rendering {
     texBound = false;
   }
 
+  private static boolean isChunkInRenderDistance(Chunk chunk, Vector3f playerPos) {
+    float wx = chunk.pos.x * Consts.CHUNK_SIZE;
+    float wz = chunk.pos.z * Consts.CHUNK_SIZE;
+
+    float dx = (wx + Consts.CHUNK_SIZE * 0.5f) - playerPos.x;
+    float dz = (wz + Consts.CHUNK_SIZE * 0.5f) - playerPos.z;
+
+    float distSq = dx * dx + dz * dz;
+    float maxDist = Consts.RENDER_DISTANCE * Consts.CHUNK_SIZE;
+
+    return distSq <= (maxDist * maxDist);
+  }
+
   public static void endFrame() {
 
   }
@@ -139,7 +153,7 @@ public class Rendering {
         System.out.println("  isVisible: " + isVisible);
       }
 
-      if(chunk.uploaded && Chunk.isChunkVisible(chunk, playerPos)) {
+      if(chunk.uploaded && isChunkInRenderDistance(chunk, playerPos) && Chunk.isChunkVisible(chunk, playerPos)) {
         chunk.drawVBO();
         chunksRendered++;
       }

@@ -8,6 +8,8 @@ import java.nio.*;
 
 import org.lwjgl.system.*;
 
+import org.joml.*;
+
 public class Shaders {
 
   public static Shaders instance;
@@ -16,6 +18,10 @@ public class Shaders {
   private int uViewLocation = -1;
   private int uModelLocation = -1;
   private int uTexLocation = -1;
+  private int uFogColorLocation = -1;
+  private int uFogStartLocation = -1;
+  private int uFogEndLocation = -1;
+  private int uCameraPosLocation = -1;
 
   private static int shaderProgram = 0;
   private static int vertShader = 0;
@@ -109,6 +115,10 @@ public class Shaders {
     uViewLocation = glGetUniformLocation(shaderProgram, "uView");
     uModelLocation = glGetUniformLocation(shaderProgram, "uModel");
     uTexLocation = glGetUniformLocation(shaderProgram, "uTex");
+    uFogStartLocation = glGetUniformLocation(shaderProgram, "uFogStart");
+    uFogEndLocation = glGetUniformLocation(shaderProgram, "uFogEnd");
+    uFogColorLocation = glGetUniformLocation(shaderProgram, "uFogColor");
+    uCameraPosLocation = glGetUniformLocation(shaderProgram, "uCameraPos");
 
     if(uProjLocation == -1 || uViewLocation == -1 || uModelLocation == -1) {
       throw new RuntimeException("Err: Failed to cache uniforms");
@@ -146,6 +156,26 @@ public class Shaders {
 
     if(instance.uTexLocation != -1) {
       glUniform1i(instance.uTexLocation, unit);
+    }
+  }
+
+  public static void setFogParams(float r, float g, float b, float start, float end) {
+    if(instance == null) throw new IllegalStateException("Shaders not created");
+    if(instance.uFogColorLocation != -1) {
+      glUniform3f(instance.uFogColorLocation, r, g, b);
+    }
+    if(instance.uFogStartLocation != -1) {
+      glUniform1f(instance.uFogStartLocation, start);
+    }
+    if(instance.uFogEndLocation != -1) {
+      glUniform1f(instance.uFogEndLocation, end);
+    }
+  }
+
+  public static void setCameraPos(Vector3f pos) {
+    if(instance == null) throw new IllegalStateException("Shaders not created");
+    if(instance.uCameraPosLocation != -1) {
+      glUniform3f(instance.uCameraPosLocation, pos.x, pos.y, pos.z);
     }
   }
 

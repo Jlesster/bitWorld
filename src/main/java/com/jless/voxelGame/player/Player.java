@@ -16,10 +16,13 @@ public class Player {
       breakReq = false;
       System.out.println("Break req fired");
 
-      RaycastHit hit = Raycast.raycast(world, PlayerController.getEyePos(), PlayerController.getForwardDir(), 6.0f);
+      RaycastHit hit = Raycast.raycast(world, PlayerController.getEyePos(), PlayerController.getForwardDir(), 60.0f);
       if(hit != null) {
+        System.out.println("Hit block at: " + hit.block.x + "," + hit.block.y + "," + hit.block.z);
         world.set(hit.block.x, hit.block.y, hit.block.z, BlockID.AIR);
         byte after = world.getIfLoaded(hit.block.x, hit.block.y, hit.block.z);
+      } else {
+        System.out.println("No hit detected");
       }
     }
 

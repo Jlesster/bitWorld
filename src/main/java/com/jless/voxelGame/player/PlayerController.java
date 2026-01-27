@@ -16,7 +16,7 @@ public class PlayerController {
   public static Vector3f pos;
   private Matrix4f viewMat;
 
-  public float pitch;
+  public static float pitch;
   public static float yaw;
   private float roll;
 
@@ -200,7 +200,7 @@ public class PlayerController {
     float minZ = pos.z - Consts.PLAYER_WIDTH / 2f;
     float maxX = pos.x + Consts.PLAYER_WIDTH / 2f;
     float maxY = pos.y + Consts.PLAYER_HEIGHT;
-    float maxZ = pos.x + Consts.PLAYER_WIDTH / 2f;
+    float maxZ = pos.z + Consts.PLAYER_WIDTH / 2f;
 
     return bx < maxX && bx + 1 > minX &&
            by < maxY && by + 1 > minY &&
@@ -257,7 +257,9 @@ public class PlayerController {
   public static Vector3f getForwardDir() {
     float cosYaw = (float)Math.cos(yaw);
     float sinYaw = (float)Math.sin(yaw);
-    return new Vector3f(-sinYaw, 0, -cosYaw).normalize();
+    float sinPitch = (float)Math.sin(pitch);
+    float cosPitch = (float)Math.cos(pitch);
+    return new Vector3f(sinYaw * cosPitch, -sinPitch, -cosYaw * cosPitch).normalize();
   }
 
   public Vector3f getRightDir() {

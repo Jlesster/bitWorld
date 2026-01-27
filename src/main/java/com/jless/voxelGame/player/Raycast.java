@@ -34,8 +34,8 @@ public class Raycast {
     float tDeltaZ = dir.z == 0 ? Float.MAX_VALUE : Math.abs(1f / dir.z);
 
     float tMaxX = dir.x > 0 ? ((vx + 1) - x) / dir.x : (x - vx) / -dir.x;
-    float tMaxY = dir.y > 0 ? ((vy + 1) - y) / dir.x : (y - vy) / -dir.y;
-    float tMaxZ = dir.z > 0 ? ((vz + 1) - z) / dir.x : (z - vz) / -dir.z;
+    float tMaxY = dir.y > 0 ? ((vy + 1) - y) / dir.y : (y - vy) / -dir.y;
+    float tMaxZ = dir.z > 0 ? ((vz + 1) - z) / dir.z : (z - vz) / -dir.z;
 
     if(dir.x == 0) tMaxX = Float.MAX_VALUE;
     if(dir.y == 0) tMaxY = Float.MAX_VALUE;

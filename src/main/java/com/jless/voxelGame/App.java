@@ -70,8 +70,18 @@ public void run() {
       threadManager.processUploads();
 
       Shaders.use();
+
+      Shaders.setFogParams(
+        Consts.FOG_COLOR_R,
+        Consts.FOG_COLOR_G,
+        Consts.FOG_COLOR_B,
+        Consts.FOG_START,
+        Consts.FOG_END
+      );
+
       Shaders.setViewMatrix(viewMatrix);
       Shaders.setProjMatrix(projMatrix);
+      Shaders.setCameraPos(PlayerController.pos);
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
       playerController.update(world, 0.016f, jumpPressed);

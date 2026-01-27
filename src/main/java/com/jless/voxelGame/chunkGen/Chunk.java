@@ -69,7 +69,7 @@ public class Chunk {
   }
 
   private FloatBuffer buildNativeMesh(World w) {
-    int initFloats = 2_000_000;
+    int initFloats = 4_500_000;
     FloatBuffer buf = BufferUtils.createFloatBuffer(initFloats);
 
     BlockMap map = getBlockMap();

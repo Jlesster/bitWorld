@@ -157,7 +157,7 @@ public class GreedyMesher {
   }
 
   private FloatBuffer generateVerticesFromQuads(List<GreedyQuad> quads) {
-    FloatBuffer buffer = BufferUtils.createFloatBuffer(2_000_000);
+    FloatBuffer buffer = BufferUtils.createFloatBuffer(4_500_000);
     for(GreedyQuad quad : quads) {
       emitQuadToBuffer(buffer, quad);
     }

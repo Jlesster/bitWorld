@@ -16,10 +16,17 @@ public final class Consts {
     1000, 2000, 4000
   };
 
-  public static final int CHUNK_SIZE = 16;
+  public static final int CHUNK_SIZE = 128;
   public static final int WORLD_HEIGHT = 128;
-  public static final int INIT_CHUNK_RADS = 16;
+  public static final int INIT_CHUNK_RADS = 4;
   public static final boolean ENABLE_GREEDY_MESHING = false;
+
+  public static final float RENDER_DISTANCE = 22f;
+  public static final float FOG_START = RENDER_DISTANCE;
+  public static final float FOG_END = 120.0f;
+  public static final float FOG_COLOR_R = 0.5f;
+  public static final float FOG_COLOR_G = 0.7f;
+  public static final float FOG_COLOR_B = 1.0f;
 
   public static final long SEED = 1337L; //TODO rng static method in world gen
 
