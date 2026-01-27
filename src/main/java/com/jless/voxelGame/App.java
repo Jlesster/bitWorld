@@ -36,7 +36,7 @@ public class App {
     }
 
     world = new World();
-    playerController = new PlayerController(0, Consts.WORLD_HEIGHT + 1.0f, 0);
+    playerController = new PlayerController(10, Consts.WORLD_HEIGHT + 1.0f, 10);
     player = new Player(world);
 
     threadManager = new ChunkThreadManager(world);
@@ -91,7 +91,7 @@ public void run() {
 
       Rendering.beginFrame();
 
-      Vector3f playerPos = playerController.pos;
+      Vector3f playerPos = PlayerController.pos;
       Rendering.renderWorld(world, playerPos);
       Rendering.endFrame();
       glfwSwapBuffers(Window.getWindow());

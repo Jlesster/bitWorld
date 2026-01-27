@@ -40,24 +40,6 @@ public class ChunkThreadManager {
     }
   }
 
-  // private void uploadToGPU(ChunkUpload upload) {
-  //   world.addChunkDirectly(upload.chunk);
-  //   FloatBuffer data = upload.meshData;
-  //   if(data == null) {
-  //     data = upload.chunk.buildMesh(world);
-  //   }
-  //
-  //   if(data == null) {
-  //     System.err.println("Err: mesh data is still null for chunk " + upload.chunk.pos + " (skipping upload)");
-  //     return;
-  //   }
-  //   upload.chunk.uploadToGPU(data);
-  //   long key = World.chunkKey(upload.chunk.pos.x, upload.chunk.pos.z);
-  //   generatingChunks.remove(key);
-  //
-  //   System.out.println("Uploaded chunk at (" + upload.chunk.pos.x + ", " + upload.chunk.pos.z + ") with " + upload.chunk.vertCount + " vertices");
-  // }
-
   private void uploadToGPU(ChunkUpload upload) {
     world.addChunkDirectly(upload.chunk);
     markNeighborDirty(upload.chunk);
@@ -104,17 +86,10 @@ public class ChunkThreadManager {
     }, executor);
   }
 
-  //debug
-  // private Chunk generateChunkInternal(int cx, int cz) {
-  //   Chunk chunk = new Chunk(new Vector3i(cx, 0, cz));
-  //   GenerateTerrain.fillChunk(chunk, world);
-  //   queueForUpload(chunk, null);
-  //   return chunk;
-  // }
-
   private Chunk generateChunkInternal(int cx, int cz) {
     Chunk chunk = new Chunk(new Vector3i(cx, 0, cz));
     GenerateTerrain.fillChunk(chunk, world);
+    FloatBuffer meshData = chunk.buildMesh(world);
     queueForUpload(chunk, null);
     return chunk;
   }
