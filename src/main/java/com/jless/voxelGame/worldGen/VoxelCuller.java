@@ -15,7 +15,7 @@ public class VoxelCuller {
   public static boolean isFaceVisible(BlockMap map, int x, int y, int z, int faceID) {
     int[] d = DIRS[faceID];
     byte neighbor = map.get(x + d[0], y + d[1], z + d[2]);
-    return !Blocks.SOLID[neighbor];
+    return !Blocks.SOLID[neighbor & 0xFF];
   }
 
   public static boolean isFaceVisible(World world, int wX, int wY, int wZ, int faceID) {
@@ -27,12 +27,24 @@ public class VoxelCuller {
     int nx = wX + d[0];
     int ny = wY + d[1];
     int nz = wZ + d[2];
-    byte neighbor = world.getIfLoaded(nx, ny, nz);
-    if(Blocks.SOLID == null) {
-      System.err.println("Err: Blocks.SOLID is null");
-      return true;
+
+    if(ny < 0 || ny >= Consts.WORLD_HEIGHT) return true;
+
+    int neighborCX = Math.floorDiv(nx, Consts.CHUNK_SIZE);
+    int neighborCZ = Math.floorDiv(nz, Consts.CHUNK_SIZE);
+
+    Chunk neighborChunk = world.getChunkIfLoaded(neighborCX, neighborCZ);
+
+    if(neighborChunk == null) {
+      return false;
     }
-    return !Blocks.SOLID[neighbor & 0xFF];
+
+    int lx = Math.floorMod(nx, Consts.CHUNK_SIZE);
+    int lz = Math.floorMod(nz, Consts.CHUNK_SIZE);
+
+    byte neighborID = neighborChunk.get(lx, ny, lz);
+
+    return !Blocks.SOLID[neighborID & 0xFF];
   }
 
   public static boolean isFaceVisible(Chunk chunk, World world, int lX, int lY, int lZ, int faceID) {

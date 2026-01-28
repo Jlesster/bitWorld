@@ -50,7 +50,7 @@ public class GenerateTerrain {
     float freq = 0.005f;
 
     for(int octave = 0; octave < 4; octave++) {
-      height += World.NOISE.noise2D(worldX * freq, worldZ * freq) *amp;
+      height += ThreadSafePerlin.noise2D(worldX * freq, worldZ * freq) *amp;
       amp *= 0.5f;
       freq *= 2;
     }

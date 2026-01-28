@@ -16,6 +16,9 @@ public class PlayerController {
   public static Vector3f pos;
   private Matrix4f viewMat;
 
+  private int lastCX = Integer.MIN_VALUE;
+  private int lastCZ = Integer.MIN_VALUE;
+
   public static float pitch;
   public static float yaw;
   private float roll;
@@ -240,7 +243,16 @@ public class PlayerController {
     processMouse(mouseDX, mouseDY);
   }
 
-  public void update(World world, float dt, boolean jumpPressed) {
+  public void update(World world, float dt, boolean jumpPressed, ChunkThreadManager threadManager) {
+    int playerCX = Math.floorDiv((int)PlayerController.pos.x, Consts.CHUNK_SIZE);
+    int playerCZ = Math.floorDiv((int)PlayerController.pos.z, Consts.CHUNK_SIZE);
+
+    if(playerCX != lastCX || playerCZ != lastCZ) {
+      world.updateStreaming(playerCX, playerCZ, threadManager);
+      lastCX = playerCX;
+      lastCZ = playerCZ;
+    }
+
     updateCameraRotation();
     handleInput(dt);
     applyPhysics(world, dt, jumpPressed);

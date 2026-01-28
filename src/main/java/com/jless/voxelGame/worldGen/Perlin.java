@@ -69,7 +69,7 @@ public class Perlin {
     }
   }
 
-  public static float noise(float x, float y, float z) {
+  public float noise(float x, float y, float z) {
     int xi = fastFloor(x);
     int yi = fastFloor(y);
     int zi = fastFloor(z);

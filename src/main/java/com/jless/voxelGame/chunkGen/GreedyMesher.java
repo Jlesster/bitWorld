@@ -37,7 +37,7 @@ public class GreedyMesher {
       resetProcessedArrays();
       scanPlaneForQuads(chunk, world, dir, quads);
     }
-    return generateVerticesFromQuads(quads);
+    return generateVerticesFromQuads(quads, chunk);
   }
 
   private void scanPlaneForQuads(Chunk chunk, World world, byte dir, List<GreedyQuad> quads) {
@@ -45,6 +45,8 @@ public class GreedyMesher {
       for(int x = 0; x < Consts.CHUNK_SIZE; x++) {
         for(int y = 0; y < Consts.WORLD_HEIGHT; y++) {
           for(int z = 0; z < Consts.CHUNK_SIZE; z++) {
+            byte blockID = chunk.get(x, y, z);
+            if(!Blocks.isSolid(blockID)) continue;
             if(processed[x][y][z] || !VoxelCuller.isFaceVisible(chunk, world, x, y, z, dir)) continue;
             GreedyQuad quad = findLargestQuadYZ(chunk, world, x, y, z, dir);
             quads.add(quad);
@@ -56,6 +58,8 @@ public class GreedyMesher {
       for(int y = 0; y < Consts.WORLD_HEIGHT; y++) {
         for(int x = 0; x < Consts.CHUNK_SIZE; x++) {
           for(int z = 0; z < Consts.CHUNK_SIZE; z++) {
+            byte blockID = chunk.get(x, y, z);
+            if(!Blocks.isSolid(blockID)) continue;
             if(processed[x][y][z] || !VoxelCuller.isFaceVisible(chunk, world, x, y, z, dir)) continue;
             GreedyQuad quad = findLargestQuadXZ(chunk, world, x, y, z, dir);
             quads.add(quad);
@@ -67,6 +71,8 @@ public class GreedyMesher {
       for(int z = 0; z < Consts.CHUNK_SIZE; z++) {
         for(int y = 0; y < Consts.WORLD_HEIGHT; y++) {
           for(int x = 0; x < Consts.CHUNK_SIZE; x++) {
+            byte blockID = chunk.get(x, y, z);
+            if(!Blocks.isSolid(blockID)) continue;
             if(processed[x][y][z] || !VoxelCuller.isFaceVisible(chunk, world, x, y, z, dir)) continue;
             GreedyQuad quad = findLargestQuadXY(chunk, world, x, y, z, dir);
             quads.add(quad);
@@ -156,132 +162,161 @@ public class GreedyMesher {
     }
   }
 
-  private FloatBuffer generateVerticesFromQuads(List<GreedyQuad> quads) {
-    FloatBuffer buffer = BufferUtils.createFloatBuffer(4_500_000);
+  private FloatBuffer generateVerticesFromQuads(List<GreedyQuad> quads, Chunk chunk) {
+    FloatBuffer buffer = BufferUtils.createFloatBuffer(2_500_000);
+
+    int baseX = chunk.pos.x * Consts.CHUNK_SIZE;
+    int baseZ = chunk.pos.z * Consts.CHUNK_SIZE;
+
     for(GreedyQuad quad : quads) {
-      emitQuadToBuffer(buffer, quad);
+      emitQuadToBuffer(buffer, quad, baseX, baseZ);
     }
     buffer.flip();
     return buffer;
   }
 
-  private void emitQuadToBuffer(FloatBuffer buffer, GreedyQuad quad) {
+  private void emitQuadToBuffer(FloatBuffer buffer, GreedyQuad quad, int baseX, int baseZ) {
+    int width = (quad.x2 - quad.x1 + 1);
+    int height = (quad.y2 - quad.y1 + 1);
+    int depth = (quad.z2 - quad.z1 + 1);
+
     float[] uv = new float[4];
     getUVPacked(quad.tex, uv);
 
     float u0 = uv[0];
-    float v0 = uv[1];
-    float u1 = uv[2];
-    float v1 = uv[3];
+    float v0 = uv[3];
+    float tileU = uv[2] - uv[0];
+    float tileV = uv[3] - uv[1];
 
-    emitQuadFaces(buffer, quad, u0, v0, u1, v1);
+    int uBlocks = 1;
+    int vBlocks = 1;
+
+    switch(quad.dir) {
+      case 0, 1 -> {
+        uBlocks = quad.z2 - quad.z1 + 1;
+        vBlocks = quad.y2 - quad.y1 + 1;
+      }
+      case 2, 3 -> {
+        uBlocks = quad.x2 - quad.x1 + 1;
+        vBlocks = quad.z2 - quad.z1 + 1;
+      }
+      case 4, 5 -> {
+        uBlocks = quad.x2 - quad.x1 + 1;
+        vBlocks = quad.y2 - quad.y1 + 1;
+      }
+    }
+
+    float u1 = uv[2];
+    float v1 = uv[1];
+
+    emitQuadFaces(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
   }
 
-  private void emitQuadFaces(FloatBuffer buffer, GreedyQuad quad, float u0, float v0, float u1, float v1) {
+  private void emitQuadFaces(FloatBuffer buffer, GreedyQuad quad, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
     switch(quad.dir) {
-      case 0 -> emitXPPlane(buffer, quad, u0, v0, u1, v1);
-      case 1 -> emitXMPlane(buffer, quad, u0, v0, u1, v1);
-      case 2 -> emitYPPlane(buffer, quad, u0, v0, u1, v1);
-      case 3 -> emitYMPlane(buffer, quad, u0, v0, u1, v1);
-      case 4 -> emitZPPlane(buffer, quad, u0, v0, u1, v1);
-      case 5 -> emitZMPlane(buffer, quad, u0, v0, u1, v1);
+      case 0 -> emitXPPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
+      case 1 -> emitXMPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
+      case 2 -> emitYPPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
+      case 3 -> emitYMPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
+      case 4 -> emitZPPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
+      case 5 -> emitZMPlane(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
     }
   }
 
-  private void emitXPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x = q.x2 + 1;
+  private void emitXPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x = baseX + q.x2 + 1;
     float y0 = q.y1;
     float y1 = q.y2 + 1;
-    float z0 = q.z1;
-    float z1 = q.z2 + 1;
+    float z0 = baseZ + q.z1;
+    float z1 = baseZ + q.z2 + 1;
 
-    putV(buffer, x, y0, z1, 1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z1, 1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z0, 1, 0, 0, u1, v1);
+    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1);
+    putV(buffer, x, y1, z0, 1, 0, 0, u0, v0);
+    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0);
 
-    putV(buffer, x, y0, z1, 1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z0, 1, 0, 0, u1, v1);
-    putV(buffer, x, y0, z0, 1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1);
+    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z1, 1, 0, 0, u1, v1);
   }
 
-  private void emitXMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x = q.x1;
+  private void emitXMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x = baseX + q.x1;
     float y0 = q.y1;
     float y1 = q.y2 + 1;
-    float z0 = q.z1;
-    float z1 = q.z2 + 1;
+    float z0 = baseZ + q.z1;
+    float z1 = baseZ + q.z2 + 1;
 
-    putV(buffer, x, y0, z0, -1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z0, -1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z1, -1, 0, 0, u1, v1);
+    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1);
+    putV(buffer, x, y1, z1, -1, 0, 0, u0, v0);
+    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0);
 
-    putV(buffer, x, y0, z0, -1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z1, -1, 0, 0, u1, v1);
-    putV(buffer, x, y0, z1, -1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1);
+    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z0, -1, 0, 0, u1, v1);
   }
 
-  private void emitYPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x0 = q.x1;
-    float x1 = q.x2 + 1;
+  private void emitYPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x0 = baseX + q.x1;
+    float x1 = baseX + q.x2 + 1;
     float y = q.y2 + 1;
-    float z0 = q.z1;
-    float z1 = q.z2 + 1;
+    float z0 = baseZ + q.z1;
+    float z1 = baseZ + q.z2 + 1;
+
+    putV(buffer, x0, y, z1, 0, 1, 0, u0, v1);
+    putV(buffer, x1, y, z1, 0, 1, 0, u1, v1);
+    putV(buffer, x1, y, z0, 0, 1, 0, u1, v0);
 
     putV(buffer, x0, y, z1, 0, 1, 0, u0, v0);
-    putV(buffer, x0, y, z0, 0, 1, 0, u0, v1);
     putV(buffer, x1, y, z0, 0, 1, 0, u1, v1);
-
-    putV(buffer, x0, y, z1, 0, 1, 0, u0, v0);
-    putV(buffer, x1, y, z0, 0, 1, 0, u1, v1);
-    putV(buffer, x1, y, z1, 0, 1, 0, u1, v0);
+    putV(buffer, x0, y, z0, 0, 1, 0, u0, v0);
   }
 
-  private void emitYMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x0 = q.x1;
-    float x1 = q.x2 + 1;
+  private void emitYMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x0 = baseX +q.x1;
+    float x1 = baseX + q.x2 + 1;
     float y = q.y1;
-    float z0 = q.z1;
-    float z1 = q.z2 + 1;
+    float z0 = baseZ + q.z1;
+    float z1 = baseZ + q.z2 + 1;
 
     putV(buffer, x0, y, z0, 0, -1, 0, u0, v0);
-    putV(buffer, x0, y, z1, 0, -1, 0, u0, v1);
-    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
-
-    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0);
-    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
     putV(buffer, x1, y, z0, 0, -1, 0, u1, v0);
+    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
+
+    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0);
+    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
+    putV(buffer, x0, y, z1, 0, -1, 0, u0, v1);
   }
 
-  private void emitZPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x0 = q.x1;
-    float x1 = q.x2 + 1;
+  private void emitZPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x0 = baseX + q.x1;
+    float x1 = baseX + q.x2 + 1;
     float y0 = q.y1;
     float y1 = q.y2 + 1;
-    float z = q.z2 + 1;
+    float z = baseZ + q.z2 + 1;
 
-    putV(buffer, x1, y0, z, 0, 0, 1, u0, v0);
-    putV(buffer, x1, y1, z, 0, 0, 1, u0, v1);
-    putV(buffer, x0, y1, z, 0, 0, 1, u1, v1);
+    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1);
+    putV(buffer, x1, y1, z, 0, 0, 1, u1, v0);
+    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0);
 
-    putV(buffer, x1, y0, z, 0, 0, 1, u0, v0);
-    putV(buffer, x0, y1, z, 0, 0, 1, u1, v1);
-    putV(buffer, x0, y0, z, 0, 0, 1, u1, v0);
+    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1);
+    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0);
+    putV(buffer, x0, y0, z, 0, 0, 1, u0, v1);
   }
 
-  private void emitZMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1) {
-    float x0 = q.x1;
-    float x1 = q.x2 + 1;
+  private void emitZMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
+    float x0 = baseX + q.x1;
+    float x1 = baseX + q.x2 + 1;
     float y0 = q.y1;
     float y1 = q.y2 + 1;
-    float z = q.z1;
+    float z = baseZ + q.z1;
 
-    putV(buffer, x0, y0, z, 0, 0, -1, u0, v0);
-    putV(buffer, x0, y1, z, 0, 0, -1, u0, v1);
-    putV(buffer, x1, y1, z, 0, 0, -1, u1, v1);
+    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1);
+    putV(buffer, x0, y1, z, 0, 0, -1, u0, v0);
+    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0);
 
-    putV(buffer, x0, y0, z, 0, 0, -1, u0, v0);
-    putV(buffer, x1, y1, z, 0, 0, -1, u1, v1);
-    putV(buffer, x1, y0, z, 0, 0, -1, u1, v0);
+    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1);
+    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0);
+    putV(buffer, x1, y0, z, 0, 0, -1, u1, v1);
   }
 
   private void putV(FloatBuffer buffer, float px, float py, float pz, float nx, float ny, float nz, float u, float v) {
@@ -296,6 +331,8 @@ public class GreedyMesher {
 
     float sx = 1.0f / TextureAtlas.ATLAS_TILE_X;
     float sy = 1.0f / TextureAtlas.ATLAS_TILE_Y;
+
+    ty = (TextureAtlas.ATLAS_TILE_Y - 1) - ty;
 
     out[0] = tx * sx;
     out[1] = ty * sy;

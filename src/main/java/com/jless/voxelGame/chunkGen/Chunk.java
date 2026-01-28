@@ -69,7 +69,7 @@ public class Chunk {
   }
 
   private FloatBuffer buildNativeMesh(World w) {
-    int initFloats = 4_500_000;
+    int initFloats = 2_500_000;
     FloatBuffer buf = BufferUtils.createFloatBuffer(initFloats);
 
     BlockMap map = getBlockMap();
@@ -109,7 +109,7 @@ public class Chunk {
       throw new RuntimeException("Mesh build failed", e);
     }
 
-    vertCount = count;
+    vertCount = count * 3;
     buf.flip();
     return buf;
   }
@@ -164,9 +164,9 @@ public class Chunk {
     getUVPacked(packedTile, uv);
 
     float u0 = uv[0];
-    float v0 = uv[3];
+    float v0 = uv[1];
     float u1 = uv[2];
-    float v1 = uv[1];
+    float v1 = uv[3];
 
     float au = 0, av = 0;
     float bu = 0, bv = 0;
@@ -315,6 +315,15 @@ public class Chunk {
     dirty = true;
   }
 
+  public boolean hasAllNeighbors(World w) {
+    int cx = pos.x;
+    int cz = pos.z;
+
+    return w.getChunkIfLoaded(cx + 1, cz) != null &&
+           w.getChunkIfLoaded(cx - 1, cz) != null &&
+           w.getChunkIfLoaded(cx, cz + 1) != null &&
+           w.getChunkIfLoaded(cx, cz - 1) != null;
+  }
 
   public static boolean isChunkVisible(Chunk c, Vector3f playerPos) {
     float chunkX = c.pos.x * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;

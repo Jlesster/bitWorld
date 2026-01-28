@@ -172,10 +172,14 @@ public class Rendering {
   }
 
   private static void rebuildDirty(World w) {
+
+    int rebuildLimit = 2;
+    int rebuilt = 0;
+
     List<Chunk> dirtyChunks = new ArrayList<>();
     synchronized(w.chunks) {
       for(Chunk chunk : w.chunks.values()) {
-        if(chunk.dirty && chunk.uploaded) {
+        if(chunk.dirty && chunk.hasAllNeighbors(w)) {
           dirtyChunks.add(chunk);
         }
       }
@@ -185,10 +189,12 @@ public class Rendering {
     }
 
     for(Chunk chunk : dirtyChunks) {
+      if(rebuilt >= rebuildLimit) break;
       try {
         FloatBuffer data = chunk.buildMesh(w);
         if(data != null && data.limit() > 0) {
           chunk.uploadToGPU(data);
+          rebuilt++;
         } else {
           System.err.println("Empty mesh for dirty chunk");
         }

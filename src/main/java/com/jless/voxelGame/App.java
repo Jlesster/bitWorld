@@ -36,7 +36,7 @@ public class App {
     }
 
     world = new World();
-    playerController = new PlayerController(10, Consts.WORLD_HEIGHT + 1.0f, 10);
+    playerController = new PlayerController(0, Consts.WORLD_HEIGHT * 1.0f, 0);
     player = new Player(world);
 
     threadManager = new ChunkThreadManager(world);
@@ -54,7 +54,7 @@ public class App {
     viewMatrix = BufferUtils.createFloatBuffer(16);
   }
 
-public void run() {
+  public void run() {
     waylandCheck();
     init();
 
@@ -84,7 +84,7 @@ public void run() {
       Shaders.setCameraPos(PlayerController.pos);
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
-      playerController.update(world, 0.016f, jumpPressed);
+      playerController.update(world, 0.016f, jumpPressed, threadManager);
       playerController.getViewMatrix().get(viewMatrix);
       Input.update();
       player.blockManip();
@@ -103,6 +103,7 @@ public void run() {
     Rendering.cleanup();
     Shaders.cleanup();
     ChunkThreadManager.cleanup();
+    ThreadSafePerlin.cleanup();
   }
 
   public static void main(String[] args) {
