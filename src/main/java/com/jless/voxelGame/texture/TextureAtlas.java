@@ -10,6 +10,12 @@ public final class TextureAtlas {
     return (ty << 8) | tx;
   }
 
+  public static int toLayer(int packed) {
+    int tx = tileX(packed);
+    int ty = tileY(packed);
+    return ty * ATLAS_TILE_X + tx;
+  }
+
   public static int tileX(int packed) { return packed & 0xFF; }
   public static int tileY(int packed) { return (packed >> 8) & 0xFF; }
 }

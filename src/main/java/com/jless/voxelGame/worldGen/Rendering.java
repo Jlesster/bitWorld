@@ -3,6 +3,7 @@ package com.jless.voxelGame.worldGen;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 import java.nio.*;
 import java.util.*;
@@ -18,7 +19,6 @@ import com.jless.voxelGame.texture.*;
 public class Rendering {
 
   private static Rendering instance;
-  private static TextureLoader texAtlas;
   private static boolean texBound = false;
 
   private static final Matrix4f identityMatrix = new Matrix4f();
@@ -26,11 +26,11 @@ public class Rendering {
 
   private static final FrustumIntersection frustum = new FrustumIntersection();
   private static final Matrix4f viewProjMat = new Matrix4f();
+  private static int textureArrayID = TextureLoader.loadTexArray("/Tileset.png", 16);
 
   private Rendering() {
     validateShadersCreated();
     initOpenGL();
-    loadTexAtlas();
     setupIdentityMatrix();
   }
 
@@ -38,14 +38,10 @@ public class Rendering {
     identityMatrix.identity().get(matrixBuffer);
   }
 
-  private void loadTexAtlas() {
-    texAtlas = TextureLoader.loadResource("/Tileset.png", false);
-  }
-
   private static void ensureTexBound() {
     if(!texBound) {
       glActiveTexture(GL_TEXTURE0);
-      texAtlas.bind();
+      glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
       Shaders.setTextureUnit(0);
       texBound = true;
     }
@@ -99,9 +95,6 @@ public class Rendering {
 
   public static void cleanup() {
     if(instance != null) {
-      if(texAtlas != null) {
-        texAtlas.cleanup();
-      }
       instance = null;
     }
   }

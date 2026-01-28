@@ -176,38 +176,31 @@ public class GreedyMesher {
   }
 
   private void emitQuadToBuffer(FloatBuffer buffer, GreedyQuad quad, int baseX, int baseZ) {
-    int width = (quad.x2 - quad.x1 + 1);
-    int height = (quad.y2 - quad.y1 + 1);
-    int depth = (quad.z2 - quad.z1 + 1);
 
     float[] uv = new float[4];
-    getUVPacked(quad.tex, uv);
 
-    float u0 = uv[0];
-    float v0 = uv[3];
-    float tileU = uv[2] - uv[0];
-    float tileV = uv[3] - uv[1];
-
-    int uBlocks = 1;
-    int vBlocks = 1;
+    int spanU = 1;
+    int spanV = 1;
 
     switch(quad.dir) {
       case 0, 1 -> {
-        uBlocks = quad.z2 - quad.z1 + 1;
-        vBlocks = quad.y2 - quad.y1 + 1;
+        spanU = (quad.z2 - quad.z1 + 1);
+        spanV = (quad.y2 - quad.y1 + 1);
       }
       case 2, 3 -> {
-        uBlocks = quad.x2 - quad.x1 + 1;
-        vBlocks = quad.z2 - quad.z1 + 1;
+        spanU = (quad.x2 - quad.x1 + 1);
+        spanV = (quad.z2 - quad.z1 + 1);
       }
       case 4, 5 -> {
-        uBlocks = quad.x2 - quad.x1 + 1;
-        vBlocks = quad.y2 - quad.y1 + 1;
+        spanU = (quad.x2 - quad.x1 + 1);
+        spanV = (quad.y2 - quad.y1 + 1);
       }
     }
 
-    float u1 = uv[2];
-    float v1 = uv[1];
+    float u0 = 0f;
+    float v0 = 0f;
+    float u1 = 24f;
+    float v1 = 12f;
 
     emitQuadFaces(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
   }
@@ -229,14 +222,15 @@ public class GreedyMesher {
     float y1 = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
+    float layer = q.tex;
 
-    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z0, 1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1, layer);
+    putV(buffer, x, y1, z0, 1, 0, 0, u0, v0, layer);
+    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0, layer);
 
-    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0);
-    putV(buffer, x, y0, z1, 1, 0, 0, u1, v1);
+    putV(buffer, x, y0, z0, 1, 0, 0, u0, v1, layer);
+    putV(buffer, x, y1, z1, 1, 0, 0, u1, v0, layer);
+    putV(buffer, x, y0, z1, 1, 0, 0, u1, v1, layer);
   }
 
   private void emitXMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
@@ -245,14 +239,15 @@ public class GreedyMesher {
     float y1 = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
+    float layer = q.tex;
 
-    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z1, -1, 0, 0, u0, v0);
-    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0);
+    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1, layer);
+    putV(buffer, x, y1, z1, -1, 0, 0, u0, v0, layer);
+    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0, layer);
 
-    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1);
-    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0);
-    putV(buffer, x, y0, z0, -1, 0, 0, u1, v1);
+    putV(buffer, x, y0, z1, -1, 0, 0, u0, v1, layer);
+    putV(buffer, x, y1, z0, -1, 0, 0, u1, v0, layer);
+    putV(buffer, x, y0, z0, -1, 0, 0, u1, v1, layer);
   }
 
   private void emitYPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
@@ -261,14 +256,15 @@ public class GreedyMesher {
     float y = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
+    float layer = q.tex;
 
-    putV(buffer, x0, y, z1, 0, 1, 0, u0, v1);
-    putV(buffer, x1, y, z1, 0, 1, 0, u1, v1);
-    putV(buffer, x1, y, z0, 0, 1, 0, u1, v0);
+    putV(buffer, x0, y, z1, 0, 1, 0, u0, v1, layer);
+    putV(buffer, x1, y, z1, 0, 1, 0, u1, v1, layer);
+    putV(buffer, x1, y, z0, 0, 1, 0, u1, v0, layer);
 
-    putV(buffer, x0, y, z1, 0, 1, 0, u0, v0);
-    putV(buffer, x1, y, z0, 0, 1, 0, u1, v1);
-    putV(buffer, x0, y, z0, 0, 1, 0, u0, v0);
+    putV(buffer, x0, y, z1, 0, 1, 0, u0, v0, layer);
+    putV(buffer, x1, y, z0, 0, 1, 0, u1, v1, layer);
+    putV(buffer, x0, y, z0, 0, 1, 0, u0, v0, layer);
   }
 
   private void emitYMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
@@ -277,14 +273,15 @@ public class GreedyMesher {
     float y = q.y1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
+    float layer = q.tex;
 
-    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0);
-    putV(buffer, x1, y, z0, 0, -1, 0, u1, v0);
-    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
+    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0, layer);
+    putV(buffer, x1, y, z0, 0, -1, 0, u1, v0, layer);
+    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1, layer);
 
-    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0);
-    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1);
-    putV(buffer, x0, y, z1, 0, -1, 0, u0, v1);
+    putV(buffer, x0, y, z0, 0, -1, 0, u0, v0, layer);
+    putV(buffer, x1, y, z1, 0, -1, 0, u1, v1, layer);
+    putV(buffer, x0, y, z1, 0, -1, 0, u0, v1, layer);
   }
 
   private void emitZPPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
@@ -293,14 +290,15 @@ public class GreedyMesher {
     float y0 = q.y1;
     float y1 = q.y2 + 1;
     float z = baseZ + q.z2 + 1;
+    float layer = q.tex;
 
-    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1);
-    putV(buffer, x1, y1, z, 0, 0, 1, u1, v0);
-    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0);
+    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1, layer);
+    putV(buffer, x1, y1, z, 0, 0, 1, u1, v0, layer);
+    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0, layer);
 
-    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1);
-    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0);
-    putV(buffer, x0, y0, z, 0, 0, 1, u0, v1);
+    putV(buffer, x1, y0, z, 0, 0, 1, u1, v1, layer);
+    putV(buffer, x0, y1, z, 0, 0, 1, u0, v0, layer);
+    putV(buffer, x0, y0, z, 0, 0, 1, u0, v1, layer);
   }
 
   private void emitZMPlane(FloatBuffer buffer, GreedyQuad q, float u0, float v0, float u1, float v1, int baseX, int baseZ) {
@@ -309,20 +307,21 @@ public class GreedyMesher {
     float y0 = q.y1;
     float y1 = q.y2 + 1;
     float z = baseZ + q.z1;
+    float layer = q.tex;
 
-    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1);
-    putV(buffer, x0, y1, z, 0, 0, -1, u0, v0);
-    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0);
+    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1, layer);
+    putV(buffer, x0, y1, z, 0, 0, -1, u0, v0, layer);
+    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0, layer);
 
-    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1);
-    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0);
-    putV(buffer, x1, y0, z, 0, 0, -1, u1, v1);
+    putV(buffer, x0, y0, z, 0, 0, -1, u0, v1, layer);
+    putV(buffer, x1, y1, z, 0, 0, -1, u1, v0, layer);
+    putV(buffer, x1, y0, z, 0, 0, -1, u1, v1, layer);
   }
 
-  private void putV(FloatBuffer buffer, float px, float py, float pz, float nx, float ny, float nz, float u, float v) {
+  private void putV(FloatBuffer buffer, float px, float py, float pz, float nx, float ny, float nz, float u, float v, float layer) {
     buffer.put(px).put(py).put(pz);
     buffer.put(nx).put(ny).put(nz);
-    buffer.put(u).put(v);
+    buffer.put(u).put(v).put(layer);
   }
 
   private void getUVPacked(int packed, float[] out) {

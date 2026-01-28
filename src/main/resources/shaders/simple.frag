@@ -1,19 +1,13 @@
 #version 330 core
 
+uniform sampler2DArray uTex;
+
 in vec2 vUV;
-in float fragDistance;
+flat in int vLayer;
 
 out vec4 FragColor;
 
-uniform sampler2D uTex;
-uniform vec3 uFogColor;
-uniform float uFogStart;
-uniform float uFogEnd;
-
-
 void main() {
-  vec4 texColor = texture(uTex, vUV);
-  float fogFactor = clamp((uFogEnd - fragDistance) / (uFogEnd - uFogStart) , 0.0, 1.0);
-  vec3 finalColor = mix(uFogColor, texColor.rgb, fogFactor);
-  FragColor = vec4(finalColor, texColor.a);
+  FragColor = texture(uTex, vec3(vUV, float(vLayer)));
+  // FragColor = vec4(float(vLayer) / 300.0, 0.0, 0.0, 1.0);
 }

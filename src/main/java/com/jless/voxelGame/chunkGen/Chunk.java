@@ -53,7 +53,7 @@ public class Chunk {
   public FloatBuffer buildMesh(World w) {
     FloatBuffer data = buildMeshBuffer(w);
     if(greedyMeshingEnabled) {
-      this.vertCount = data.limit() / 8;
+      this.vertCount = data.limit() / 9;
     }
     System.out.println("buildMesh: pos=" + pos + " dataLimit=" + data.limit() + " vertCount=" + vertCount);
     return data;
@@ -134,13 +134,15 @@ public class Chunk {
     glBindBuffer(GL_ARRAY_BUFFER, vboID);
     glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
 
-    int stride = 8 * Float.BYTES;
+    int stride = 9 * Float.BYTES;
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
     glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0L);
     glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3L * Float.BYTES);
     glVertexAttribPointer(2,2, GL_FLOAT, false, stride, 6L * Float.BYTES);
+    glVertexAttribPointer(3, 1, GL_FLOAT, false, stride, 8L * Float.BYTES);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
@@ -160,13 +162,13 @@ public class Chunk {
 
   private int emitFaceAsTriangle(FloatBuffer b, int x, int y, int z, int face, byte id, int packedTile) {
 
-    float[] uv = new float[4];
-    getUVPacked(packedTile, uv);
-
-    float u0 = uv[0];
-    float v0 = uv[1];
-    float u1 = uv[2];
-    float v1 = uv[3];
+    int spanU =  1;
+    int spanV =  1;
+    float u0 = 0f;
+    float v0 = 0f;
+    float u1 = spanU;
+    float v1 = spanV;
+    float layer = packedTile;
 
     float au = 0, av = 0;
     float bu = 0, bv = 0;
@@ -257,13 +259,13 @@ public class Chunk {
         du = u1; dv = v0;
       }
     }
-    putV(b, ax, ay, az, nx, ny, nz, au, av);
-    putV(b, bx, by, bz, nx, ny, nz, bu, bv);
-    putV(b, cx, cy, cz, nx, ny, nz, cu, cv);
+    putV(b, ax, ay, az, nx, ny, nz, au, av, layer);
+    putV(b, bx, by, bz, nx, ny, nz, bu, bv, layer);
+    putV(b, cx, cy, cz, nx, ny, nz, cu, cv, layer);
 
-    putV(b, ax, ay, az, nx, ny, nz, au, av);
-    putV(b, cx, cy, cz, nx, ny, nz, cu, cv);
-    putV(b, dx, dy, dz, nx, ny, nz, du, dv);
+    putV(b, ax, ay, az, nx, ny, nz, au, av, layer);
+    putV(b, cx, cy, cz, nx, ny, nz, cu, cv, layer);
+    putV(b, dx, dy, dz, nx, ny, nz, du, dv, layer);
 
     return 6;
   }
@@ -271,10 +273,10 @@ public class Chunk {
   public void putV(FloatBuffer b,
   float px, float py, float pz,
   float nx, float ny, float nz,
-  float u, float v) {
+  float u, float v, float layer) {
     b.put(px).put(py).put(pz);
     b.put(nx).put(ny).put(nz);
-    b.put(u).put(v);
+    b.put(u).put(v).put(layer);
   }
 
   public void drawVBO() {
