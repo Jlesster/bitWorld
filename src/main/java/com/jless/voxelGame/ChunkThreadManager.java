@@ -6,8 +6,7 @@ import java.util.concurrent.*;
 import org.joml.*;
 
 import com.jless.voxelGame.chunkGen.*;
-import com.jless.voxelGame.worldGen.GenerateTerrain;
-import com.jless.voxelGame.worldGen.World;
+import com.jless.voxelGame.worldGen.*;
 
 public class ChunkThreadManager {
 

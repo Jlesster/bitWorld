@@ -22,8 +22,11 @@ public class Chunk {
   public final BlockMap blocks;
 
   private boolean greedyMeshingEnabled = Consts.ENABLE_GREEDY_MESHING;
-  public boolean dirty = true;
+
+  private FloatBuffer pendingMeshData = null;
+
   public volatile boolean uploaded = false;
+  public boolean dirty = true;
   public int vertCount = 0;
   public int vboID = 0;
   public int vaoID = 0;
@@ -65,6 +68,15 @@ public class Chunk {
       return mesher.buildGreedyMesh(this, w);
     } else {
       return buildNativeMesh(w);
+    }
+  }
+
+  public void buildMeshAsync(World w) {
+    if(!hasAllNeighbors(w)) return;
+
+    FloatBuffer data = buildMesh(w);
+    synchronized(this) {
+      pendingMeshData = data;
     }
   }
 
@@ -114,6 +126,16 @@ public class Chunk {
     return buf;
   }
 
+  public void uploadPendingMesh() {
+    FloatBuffer data;
+    synchronized(this) {
+      data = pendingMeshData;
+      pendingMeshData = null;
+    }
+    if(data != null && data.limit() > 0) {
+      uploadToGPU(data);
+    }
+  }
 
   public void ensureUploaded(World w) {
     if(!dirty && uploaded) return;
@@ -129,6 +151,7 @@ public class Chunk {
     }
     if(vboID == 0) vboID = glGenBuffers();
     if(vaoID == 0) vaoID = glGenVertexArrays();
+    if(vboID == vaoID) System.err.println("CRITICAL: vbo==vao for chunk " + pos);
     System.out.println("DEBUG: uploadToGPU: vaoID: " + vaoID + " vboID: " + vboID + " dataSize: " + data.limit());
     glBindVertexArray(vaoID);
     glBindBuffer(GL_ARRAY_BUFFER, vboID);
@@ -166,9 +189,16 @@ public class Chunk {
     int spanV =  1;
     float u0 = 0f;
     float v0 = 0f;
-    float u1 = spanU;
-    float v1 = spanV;
-    float layer = packedTile;
+    float u1 = 1f;
+    float v1 = 1f;
+    float layer = TextureAtlas.toLayer(packedTile);
+if(x < 3 && y == 64 && z < 3) {
+    System.out.println("Block ID: " + id + ", Face: " + face +
+                       ", PackedTile: " + packedTile +
+                       ", Layer: " + layer +
+                       ", tx: " + TextureAtlas.tileX(packedTile) +
+                       ", ty: " + TextureAtlas.tileY(packedTile));
+}
 
     float au = 0, av = 0;
     float bu = 0, bv = 0;

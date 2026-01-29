@@ -38,15 +38,6 @@ public class Rendering {
     identityMatrix.identity().get(matrixBuffer);
   }
 
-  private static void ensureTexBound() {
-    if(!texBound) {
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
-      Shaders.setTextureUnit(0);
-      texBound = true;
-    }
-  }
-
   private void initOpenGL() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -73,7 +64,10 @@ public class Rendering {
     glEnable(GL_DEPTH_TEST);
     Shaders.use();
     Shaders.setModelMatrix(Rendering.matrixBuffer);
-    texBound = false;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
+    Shaders.setTextureUnit(0);
+    texBound = true;
   }
 
   private static boolean isChunkInRenderDistance(Chunk chunk, Vector3f playerPos) {
@@ -102,7 +96,6 @@ public class Rendering {
   private static int debugFrameCount = 0;
 
   public static void renderWorld(World w, Vector3f playerPos) {
-    ensureTexBound();
     rebuildDirty(w);
 
     int currProgram = glGetInteger(GL_CURRENT_PROGRAM);
@@ -146,7 +139,7 @@ public class Rendering {
         System.out.println("  isVisible: " + isVisible);
       }
 
-      if(chunk.uploaded && isChunkInRenderDistance(chunk, playerPos) && Chunk.isChunkVisible(chunk, playerPos)) {
+      if(chunk.uploaded && isVisible) {
         chunk.drawVBO();
         chunksRendered++;
       }

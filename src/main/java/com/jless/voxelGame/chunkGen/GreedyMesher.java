@@ -163,7 +163,10 @@ public class GreedyMesher {
   }
 
   private FloatBuffer generateVerticesFromQuads(List<GreedyQuad> quads, Chunk chunk) {
-    FloatBuffer buffer = BufferUtils.createFloatBuffer(2_500_000);
+    int floatsPerQuad = 6 * 9;
+    int totalFloats = quads.size() * floatsPerQuad;
+
+    FloatBuffer buffer = BufferUtils.createFloatBuffer(totalFloats);
 
     int baseX = chunk.pos.x * Consts.CHUNK_SIZE;
     int baseZ = chunk.pos.z * Consts.CHUNK_SIZE;
@@ -199,8 +202,8 @@ public class GreedyMesher {
 
     float u0 = 0f;
     float v0 = 0f;
-    float u1 = 24f;
-    float v1 = 12f;
+    float u1 = (float)spanU;
+    float v1 = (float)spanV;
 
     emitQuadFaces(buffer, quad, u0, v0, u1, v1, baseX, baseZ);
   }
@@ -222,7 +225,7 @@ public class GreedyMesher {
     float y1 = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x, y0, z0, 1, 0, 0, u0, v1, layer);
     putV(buffer, x, y1, z0, 1, 0, 0, u0, v0, layer);
@@ -239,7 +242,7 @@ public class GreedyMesher {
     float y1 = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x, y0, z1, -1, 0, 0, u0, v1, layer);
     putV(buffer, x, y1, z1, -1, 0, 0, u0, v0, layer);
@@ -256,14 +259,14 @@ public class GreedyMesher {
     float y = q.y2 + 1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x0, y, z1, 0, 1, 0, u0, v1, layer);
     putV(buffer, x1, y, z1, 0, 1, 0, u1, v1, layer);
     putV(buffer, x1, y, z0, 0, 1, 0, u1, v0, layer);
 
-    putV(buffer, x0, y, z1, 0, 1, 0, u0, v0, layer);
-    putV(buffer, x1, y, z0, 0, 1, 0, u1, v1, layer);
+    putV(buffer, x0, y, z1, 0, 1, 0, u0, v1, layer);
+    putV(buffer, x1, y, z0, 0, 1, 0, u1, v0, layer);
     putV(buffer, x0, y, z0, 0, 1, 0, u0, v0, layer);
   }
 
@@ -273,7 +276,7 @@ public class GreedyMesher {
     float y = q.y1;
     float z0 = baseZ + q.z1;
     float z1 = baseZ + q.z2 + 1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x0, y, z0, 0, -1, 0, u0, v0, layer);
     putV(buffer, x1, y, z0, 0, -1, 0, u1, v0, layer);
@@ -290,7 +293,7 @@ public class GreedyMesher {
     float y0 = q.y1;
     float y1 = q.y2 + 1;
     float z = baseZ + q.z2 + 1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x1, y0, z, 0, 0, 1, u1, v1, layer);
     putV(buffer, x1, y1, z, 0, 0, 1, u1, v0, layer);
@@ -307,7 +310,7 @@ public class GreedyMesher {
     float y0 = q.y1;
     float y1 = q.y2 + 1;
     float z = baseZ + q.z1;
-    float layer = q.tex;
+    float layer = TextureAtlas.toLayer(q.tex);
 
     putV(buffer, x0, y0, z, 0, 0, -1, u0, v1, layer);
     putV(buffer, x0, y1, z, 0, 0, -1, u0, v0, layer);

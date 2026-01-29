@@ -13,6 +13,7 @@ public final class TextureAtlas {
   public static int toLayer(int packed) {
     int tx = tileX(packed);
     int ty = tileY(packed);
+    ty = (ATLAS_TILE_Y - 1) - ty;
     return ty * ATLAS_TILE_X + tx;
   }
 

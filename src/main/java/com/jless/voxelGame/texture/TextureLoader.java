@@ -96,7 +96,7 @@ public final class TextureLoader {
         for(int y = 0; y < tileSize; y++) {
           for(int x = 0; x < tileSize; x++) {
             int px = tx * tileSize + x;
-            int py = (ty * tileSize) + (tileSize - 1 - y);
+            int py = ty * tileSize + y;
             int argb = image.getRGB(px, py);
 
             buffer.put((byte)((argb >> 16) & 0xFF));

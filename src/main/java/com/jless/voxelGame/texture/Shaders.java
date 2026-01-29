@@ -152,7 +152,7 @@ public class Shaders {
 
   public static void setTextureUnit(int unit) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    // if(instance.uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
+    if(instance.uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
 
     if(instance.uTexLocation != -1) {
       glUniform1i(instance.uTexLocation, unit);
