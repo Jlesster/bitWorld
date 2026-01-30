@@ -9,13 +9,14 @@ import org.lwjgl.*;
 
 import org.joml.*;
 
-import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.player.*;
 import com.jless.voxelGame.texture.*;
+import com.jless.voxelGame.ui.*;
 import com.jless.voxelGame.worldGen.*;
 
 public class App {
 
+  private UI ui;
   private World world;
   private Player player;
   private ChunkThreadManager threadManager;
@@ -28,19 +29,13 @@ public class App {
     Shaders.create();
     Rendering.create();
 
-    System.out.println("Checking blocks init");
-    if(Blocks.SOLID == null) {
-      System.err.println("Err: Blocks.SOLID is null");
-    } else {
-      System.out.println("Blocks.SOLID initialised");
-    }
-
+    ui = new UI();
     world = new World();
     playerController = new PlayerController(0, Consts.WORLD_HEIGHT * 1.0f, 0);
     player = new Player(world);
-
     threadManager = new ChunkThreadManager(world);
 
+    ui.initGUI(Window.getWindow());
     world.generateSpawnAsync(threadManager);
     setupMatrices();
     Input.setup(Window.getWindow());
@@ -86,6 +81,7 @@ public class App {
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
       playerController.update(world, 0.016f, jumpPressed, threadManager);
       playerController.getViewMatrix().get(viewMatrix);
+
       Input.update();
       player.blockManip();
 
@@ -93,7 +89,8 @@ public class App {
 
       Vector3f playerPos = PlayerController.pos;
       Rendering.renderWorld(world, playerPos);
-      Rendering.endFrame();
+      ui.renderGUI();
+
       glfwSwapBuffers(Window.getWindow());
     }
   }
