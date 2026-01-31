@@ -23,7 +23,7 @@ public class PlayerController {
   public static float yaw;
   private float roll;
 
-  private float moveSpeed = 0.1f;
+  private float moveSpeed = 0.8f;
   private boolean onGround = false;
   private boolean wishMoving = false;
 
@@ -99,8 +99,8 @@ public class PlayerController {
 
       horizVel.lerp(targetVel, accel * dt);
 
-      velocity.x = horizVel.x;
-      velocity.z = horizVel.z;
+      velocity.x = horizVel.x * moveSpeed;
+      velocity.z = horizVel.z * moveSpeed;
     }
   }
 
@@ -244,8 +244,8 @@ public class PlayerController {
   }
 
   public void update(World world, float dt, boolean jumpPressed, ChunkThreadManager threadManager) {
-    int playerCX = Math.floorDiv((int)PlayerController.pos.x, Consts.CHUNK_SIZE);
-    int playerCZ = Math.floorDiv((int)PlayerController.pos.z, Consts.CHUNK_SIZE);
+    int playerCX = (int)Math.floor(PlayerController.pos.x / Consts.CHUNK_SIZE);
+    int playerCZ = (int)Math.floor(PlayerController.pos.z / Consts.CHUNK_SIZE);
 
     if(playerCX != lastCX || playerCZ != lastCZ) {
       world.updateStreaming(playerCX, playerCZ, threadManager);

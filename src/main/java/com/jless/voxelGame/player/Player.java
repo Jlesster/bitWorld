@@ -9,6 +9,7 @@ public class Player {
   private RaycastHit currHit = null;
   public static boolean breakReq = false;
   public static boolean placeReq = false;
+  public byte block = BlockID.GRASS;
   private World world;
 
   public void blockManip() {
@@ -28,7 +29,8 @@ public class Player {
 
     if(placeReq) {
       placeReq = false;
-      byte placeID = BlockID.STONE;
+      System.out.println("PlaceReqFired");
+      byte placeID = block;
 
       RaycastHit hit = Raycast.raycast(world, PlayerController.getEyePos(), PlayerController.getForwardDir(), 6.0f);
 
@@ -41,6 +43,15 @@ public class Player {
         }
       }
     }
+  }
+
+  public void setSelectedBlock(byte id) {
+    this.block = id;
+    System.out.println("Selected block: " + block);
+  }
+
+  public byte getSelectedBlock() {
+    return block;
   }
 
   public Player(World w) {

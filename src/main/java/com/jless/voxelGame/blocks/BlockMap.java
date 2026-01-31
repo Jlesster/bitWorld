@@ -17,7 +17,7 @@ public class BlockMap {
   }
 
   public boolean inBounds(int x, int y, int z) {
-    return x >= 0 && x < sizeX && y >= 0 & y < sizeY && z >= 0 && z < sizeZ;
+    return x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ;
   }
 
   public byte get(int x, int y, int z) {

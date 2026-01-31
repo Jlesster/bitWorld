@@ -51,6 +51,19 @@ public class VoxelCuller {
     int wX = chunk.pos.x * Consts.CHUNK_SIZE + lX;
     int wY = lY;
     int wZ = chunk.pos.z * Consts.CHUNK_SIZE + lZ;
-    return isFaceVisible(world, wX, wY, wZ, faceID);
+
+    int nx = wX, ny = wY, nz = wZ;
+    switch(faceID) {
+      case 0: nx++; break;
+      case 1: nx--; break;
+      case 2: ny++; break;
+      case 3: ny--; break;
+      case 4: nz++; break;
+      case 5: nz--; break;
+    }
+    if(ny < 0 || ny >= Consts.WORLD_HEIGHT) return true;
+    byte nb = world.getIfLoaded(nx, ny, nz);
+
+    return !Blocks.SOLID[nb];
   }
 }

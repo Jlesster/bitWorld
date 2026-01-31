@@ -1,6 +1,6 @@
 package com.jless.voxelGame;
 
-import java.nio.*;
+import java.util.*;
 import java.util.concurrent.*;
 
 import org.joml.*;
@@ -12,8 +12,11 @@ public class ChunkThreadManager {
 
   private final World world;
   private static ExecutorService executor;
-  private final ConcurrentLinkedQueue<ChunkUpload> uploadQueue;
+  private final ConcurrentLinkedQueue<Chunk> uploadQueue;
+  private final Set<Long> rebuildingChunks = ConcurrentHashMap.newKeySet();
   private final ConcurrentHashMap<Long, CompletableFuture<Chunk>> generatingChunks;
+
+  private int recoveryCount = 0;
 
   ChunkThreadManager(World world) {
     this.world = world;
@@ -22,62 +25,88 @@ public class ChunkThreadManager {
     this.generatingChunks = new ConcurrentHashMap<>();
   }
 
-  public void queueForUpload(Chunk chunk, FloatBuffer meshData) {
-    uploadQueue.offer(new ChunkUpload(chunk, meshData));
+  public void queueForUpload(Chunk chunk) {
+    uploadQueue.offer(chunk);
   }
 
   public synchronized void processUploads() {
     int processed = 0;
+    int rebuildCount = 0;
+    int rebuildLimit = 10;
     int uploadLimit = Consts.MAX_CHUNK_UPLOADS_PER_FRAME;
+
     while(!uploadQueue.isEmpty() && processed < uploadLimit) {
-      ChunkUpload upload = uploadQueue.poll();
-      if(upload != null) {
-        uploadToGPU(upload);
-        processed++;
+      Chunk upload = uploadQueue.poll();
+      if(upload == null) break;
+
+      if(upload.hasPendingMesh()) {
+        boolean success = upload.uploadPendingMesh();
+        if(success && upload.uploaded) {
+          markNeighborDirty(upload);
+          world.markChunkGenerated(upload.pos.x, upload.pos.z);
+          processed++;
+        } else {
+          System.err.println("Err: Upload failed");
+          upload.markDirty();
+        }
+      } else {
+        upload.markDirty();
+        continue;
       }
     }
-    if(processed > 0) {
-      System.out.println("Processed " + processed + " chunks uploads on main thread (remaining: " + uploadQueue.size() + ")");
+    recoverStuckChunks();
+
+    for(Chunk chunk : world.chunks.values()) {
+      if(rebuildCount >= rebuildLimit) break;
+      if(chunk.dirty && chunk.hasAllNeighbors(world)) {
+        long key = World.chunkKey(chunk.pos.x, chunk.pos.z);
+
+        if(rebuildingChunks.add(key)) {
+          final int cx = chunk.pos.x;
+          final int cz = chunk.pos.z;
+          executor.submit(() -> {
+            try {
+              Chunk c = world.getChunkIfLoaded(cx, cz);
+              if(c != null && c.dirty) {
+                c.buildMeshAsync(world);
+                queueForUpload(c);
+              }
+            } finally {
+              rebuildingChunks.remove(key);
+            }
+          });
+          rebuildCount++;
+        }
+      }
     }
   }
 
-  private void uploadToGPU(ChunkUpload upload) {
-    world.addChunkDirectly(upload.chunk);
-    int cx = upload.chunk.pos.x;
-    int cz = upload.chunk.pos.z;
+  private void recoverStuckChunks() {
+    recoveryCount++;
+    if(recoveryCount < 30) return;
+    recoveryCount = 0;
 
-    Chunk n;
-    n = world.getChunkIfLoaded(cx + 1, cz);
-    if(n != null) n.markDirty();
-
-    n = world.getChunkIfLoaded(cx - 1, cz);
-    if(n != null) n.markDirty();
-
-    n = world.getChunkIfLoaded(cx, cz + 1);
-    if(n != null) n.markDirty();
-
-    n = world.getChunkIfLoaded(cx, cz - 1);
-    if(n != null) n.markDirty();
-
-    markNeighborDirty(upload.chunk);
-    FloatBuffer data = upload.meshData;
-
-    if(data == null || data.limit() == 0) {
-      System.err.println("Mesh empty");
-      return;
+    List<Chunk> stuckChunks = new ArrayList<>();
+    synchronized(world.chunks) {
+      for(Chunk chunk : world.chunks.values()) {
+        if(!chunk.uploaded && chunk.hasAllNeighbors(world) && !chunk.hasPendingMesh() && !uploadQueue.contains(chunk)) {
+          stuckChunks.add(chunk);
+        }
+      }
     }
-    upload.chunk.uploadToGPU(data);
-    long key = World.chunkKey(upload.chunk.pos.x, upload.chunk.pos.z);
-    generatingChunks.remove(key);
-
-    System.out.println("Uploaded chunk at (" + upload.chunk.pos.x + ", " + upload.chunk.pos.z + ") with " + upload.chunk.vertCount + " vertices");
-    System.out.println("World now contains " + world.chunks.size() + " chunks");
-
-    world.markChunkGenerated(upload.chunk.pos.x, upload.chunk.pos.z);
+    if(!stuckChunks.isEmpty()) {
+      System.out.println("Found " + stuckChunks.size() + " stuck chunks, rebuilding.");
+      for(Chunk chunk : stuckChunks) {
+        chunk.markDirty();
+        CompletableFuture.runAsync(() -> {
+          chunk.buildMeshAsync(world);
+          queueForUpload(chunk);
+        }, executor);
+      }
+    }
   }
 
   private CompletableFuture<Chunk> generateChunkWithRetry(int cx, int cz, int attempt) {
-    long key = World.chunkKey(cx, cz);
     return CompletableFuture.supplyAsync(() -> {
       try {
         return generateChunkInternal(cx, cz);
@@ -106,11 +135,15 @@ public class ChunkThreadManager {
     Chunk chunk = new Chunk(new Vector3i(cx, 0, cz));
     world.addChunkDirectly(chunk);
     GenerateTerrain.fillChunk(chunk, world);
-    if(chunk.hasAllNeighbors(world)) {
-      FloatBuffer meshData = chunk.buildMesh(world);
-      queueForUpload(chunk, meshData);
+
+    if(!chunk.hasAllNeighbors(world)) {
+      chunk.buildMeshAsync(world);
+      queueForUpload(chunk);
     } else {
+      chunk.buildMeshAsync(world);
+      queueForUpload(chunk);
       chunk.markDirty();
+      System.out.println("Chunk waiting for neighbor");
     }
     return chunk;
   }
@@ -126,6 +159,12 @@ public class ChunkThreadManager {
     }
 
     CompletableFuture<Chunk> future = generateChunkWithRetry(cx, cz, 0);
+    future.whenComplete((c, err) -> {
+      generatingChunks.remove(key);
+      if(err != null) {
+        System.err.println("Chunk failed");
+      }
+    });
 
     CompletableFuture<Chunk> previous = generatingChunks.putIfAbsent(key, future);
     return previous != null ? previous : future;
@@ -135,20 +174,14 @@ public class ChunkThreadManager {
     int cx = chunk.pos.x;
     int cz = chunk.pos.z;
 
-    Chunk neighbor;
+    int[][] offsets = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    for(int[] off : offsets) {
+      Chunk neighbor = world.getChunkIfLoaded(cx + off[0], cz + off[1]);
 
-    neighbor = world.getChunkIfLoaded(cx + 1, cz);
-    if(neighbor != null) neighbor.markDirty();
-
-    neighbor = world.getChunkIfLoaded(cx - 1, cz);
-    if(neighbor != null) neighbor.markDirty();
-
-    neighbor = world.getChunkIfLoaded(cx, cz + 1);
-    if(neighbor != null) neighbor.markDirty();
-
-    neighbor = world.getChunkIfLoaded(cx, cz - 1);
-    if(neighbor != null) neighbor.markDirty();
-
+      if(neighbor != null && !neighbor.uploaded) {
+        neighbor.markDirty();
+      }
+    }
   }
 
   public static void cleanup() {

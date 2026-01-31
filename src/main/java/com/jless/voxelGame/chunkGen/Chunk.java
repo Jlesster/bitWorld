@@ -21,13 +21,15 @@ public class Chunk {
   public final Vector3i pos;
   public final BlockMap blocks;
 
+  public static final Object GL_ID_LOCK = new Object();
   private boolean greedyMeshingEnabled = Consts.ENABLE_GREEDY_MESHING;
 
   private FloatBuffer pendingMeshData = null;
+  private int pendingVertCount = 0;
 
   public volatile boolean uploaded = false;
   public boolean dirty = true;
-  public int vertCount = 0;
+  public volatile int vertCount = 0;
   public int vboID = 0;
   public int vaoID = 0;
 
@@ -55,11 +57,70 @@ public class Chunk {
 
   public FloatBuffer buildMesh(World w) {
     FloatBuffer data = buildMeshBuffer(w);
+    int calculatedVertCount;
     if(greedyMeshingEnabled) {
-      this.vertCount = data.limit() / 9;
+      calculatedVertCount = data.limit() / 9;
+    } else {
+      calculatedVertCount = this.vertCount;
     }
     System.out.println("buildMesh: pos=" + pos + " dataLimit=" + data.limit() + " vertCount=" + vertCount);
     return data;
+  }
+
+  public void uploadToGPU(FloatBuffer data, int vCount) {
+    if(data == null || data.limit() == 0) {
+      System.err.println("Err: uploadToGPU called with null value");
+      dirty = false;
+      return;
+    }
+
+    int expectedVerts = data.limit() / 9;
+    if(vCount != expectedVerts) {
+      System.err.println("WARN: VertCount mismatch");
+      vCount = expectedVerts;
+    }
+
+    synchronized(GL_ID_LOCK) {
+      if(vboID == 0) {
+        vboID = glGenBuffers();
+      }
+      if(vaoID == 0) {
+        vaoID = glGenVertexArrays();
+      }
+      if(vboID == vaoID) {
+        System.err.println("CRITICAL ERROR: VBO==VAO");
+        vaoID = glGenVertexArrays();
+        System.err.println("----REGENERATED VAO----");
+      }
+    }
+    System.out.println("DEBUG: uploadToGPU: " + pos + " vaoID=" + vaoID + ", vboID=" + vboID + ", dataSize=" + data.limit());
+
+    glBindVertexArray(vaoID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
+
+    int stride = 9 * Float.BYTES;
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0L);
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3L * Float.BYTES);
+    glVertexAttribPointer(2, 2, GL_FLOAT, false, stride, 6L * Float.BYTES);
+    glVertexAttribPointer(3, 1, GL_FLOAT, false, stride, 8L * Float.BYTES);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    this.vertCount = vCount;
+    dirty = false;
+    uploaded = true;
+    System.out.println("DEBUG uploadToGPU complete: chunk=" + pos + " uploaded=" + uploaded);
+  }
+
+  public void uploadToGPU(FloatBuffer data) {
+    int vCount = greedyMeshingEnabled ? (data.limit() / 9) : vertCount;
+    uploadToGPU(data, vCount);
   }
 
   private FloatBuffer buildMeshBuffer(World w) {
@@ -72,11 +133,21 @@ public class Chunk {
   }
 
   public void buildMeshAsync(World w) {
-    if(!hasAllNeighbors(w)) return;
-
     FloatBuffer data = buildMesh(w);
+    int calculatedVertCount;
+    if(greedyMeshingEnabled) {
+      calculatedVertCount = data.limit() / 9;
+    } else {
+      calculatedVertCount = this.vertCount;
+    }
+
     synchronized(this) {
-      pendingMeshData = data;
+    if(pendingMeshData == null) {
+        pendingMeshData = data;
+        pendingVertCount = calculatedVertCount;
+      } else {
+        System.out.println("Skipping mesh update for " + pos);
+      }
     }
   }
 
@@ -121,19 +192,26 @@ public class Chunk {
       throw new RuntimeException("Mesh build failed", e);
     }
 
-    vertCount = count * 3;
+    vertCount = count;
     buf.flip();
     return buf;
   }
 
-  public void uploadPendingMesh() {
+  public boolean uploadPendingMesh() {
     FloatBuffer data;
+    int vCount;
     synchronized(this) {
       data = pendingMeshData;
+      vCount = pendingVertCount;
       pendingMeshData = null;
+      pendingVertCount = 0;
     }
     if(data != null && data.limit() > 0) {
-      uploadToGPU(data);
+      uploadToGPU(data, vCount);
+      return true;
+    } else {
+      System.err.println("uploadPendingMesh has no pending data");
+      return false;
     }
   }
 
@@ -142,36 +220,6 @@ public class Chunk {
 
     FloatBuffer data = buildMesh(w);
     uploadToGPU(data);
-  }
-
-  public void uploadToGPU(FloatBuffer data) {
-    if(data == null) {
-      System.err.println("Err: uploadToGPU called with null data");
-      return;
-    }
-    if(vboID == 0) vboID = glGenBuffers();
-    if(vaoID == 0) vaoID = glGenVertexArrays();
-    if(vboID == vaoID) System.err.println("CRITICAL: vbo==vao for chunk " + pos);
-    System.out.println("DEBUG: uploadToGPU: vaoID: " + vaoID + " vboID: " + vboID + " dataSize: " + data.limit());
-    glBindVertexArray(vaoID);
-    glBindBuffer(GL_ARRAY_BUFFER, vboID);
-    glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
-
-    int stride = 9 * Float.BYTES;
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0L);
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3L * Float.BYTES);
-    glVertexAttribPointer(2,2, GL_FLOAT, false, stride, 6L * Float.BYTES);
-    glVertexAttribPointer(3, 1, GL_FLOAT, false, stride, 8L * Float.BYTES);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    dirty = false;
-    uploaded = true;
-    System.out.println("DEBUG uploadToGPU complete: uploaded=" + uploaded);
   }
 
   private int getTextureForFace(byte id, int face) {
@@ -185,8 +233,6 @@ public class Chunk {
 
   private int emitFaceAsTriangle(FloatBuffer b, int x, int y, int z, int face, byte id, int packedTile) {
 
-    int spanU =  1;
-    int spanV =  1;
     float u0 = 0f;
     float v0 = 0f;
     float u1 = 1f;
@@ -357,6 +403,10 @@ if(x < 3 && y == 64 && z < 3) {
            w.getChunkIfLoaded(cx, cz - 1) != null;
   }
 
+  public synchronized boolean hasPendingMesh() {
+    return pendingMeshData != null && pendingMeshData.limit() > 0;
+  }
+
   public static boolean isChunkVisible(Chunk c, Vector3f playerPos) {
     float chunkX = c.pos.x * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
     float chunkZ = c.pos.z * Consts.CHUNK_SIZE + Consts.CHUNK_SIZE * 0.5f;
@@ -365,8 +415,21 @@ if(x < 3 && y == 64 && z < 3) {
     float dz = chunkZ - playerPos.z;
     float distanceSquared = dx * dx + dz * dz;
 
-    float renderDistance = Consts.INIT_CHUNK_RADS * Consts.CHUNK_SIZE;
+    float renderDistance = Consts.RENDER_DISTANCE * Consts.CHUNK_SIZE;
+    if(distanceSquared > renderDistance * renderDistance) return false;
 
+    // float closeDistance = Consts.CHUNK_SIZE * 2;
+    // if(distanceSquared < closeDistance * closeDistance) return true;
+    //
+    // float padding = 2.0f;
+    // float minX = c.pos.x * Consts.CHUNK_SIZE - padding;
+    // float minZ = c.pos.z * Consts.CHUNK_SIZE - padding;
+    // float maxX = minX + Consts.CHUNK_SIZE + padding * 2;
+    // float maxZ = minZ + Consts.CHUNK_SIZE + padding * 2;
+    // float minY = -padding;
+    // float maxY = Consts.WORLD_HEIGHT + padding;
+    //
+    // return Rendering.frustum.testAab(minX, minY, minZ, maxX, maxY, maxZ);
     return distanceSquared <= renderDistance * renderDistance;
   }
 
@@ -374,6 +437,10 @@ if(x < 3 && y == 64 && z < 3) {
     if(vboID != 0) {
       glDeleteBuffers(vboID);
       vboID = 0;
+    }
+    if(vaoID != 0) {
+      glDeleteBuffers(vaoID);
+      vaoID = 0;
     }
     uploaded = false;
   }

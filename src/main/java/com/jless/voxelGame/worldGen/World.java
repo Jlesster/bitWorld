@@ -48,6 +48,13 @@ public class World {
   public void addChunkDirectly(Chunk chunk) {
     long key = chunkKey(chunk.pos.x, chunk.pos.z);
     chunks.put(key, chunk);
+
+    chunk.markDirty();
+
+    markNeighborDirty(chunk.pos.x - 1, chunk.pos.z);
+    markNeighborDirty(chunk.pos.x + 1, chunk.pos.z);
+    markNeighborDirty(chunk.pos.x, chunk.pos.z - 1);
+    markNeighborDirty(chunk.pos.x, chunk.pos.z + 1);
   }
 
   public void generateSpawnAsync(ChunkThreadManager threadManager) {
@@ -215,7 +222,7 @@ public class World {
         int effectiveRads = baseRadius;
 
         if(alignment > 0.6f) {
-          effectiveRads += backwardPenalty;
+          effectiveRads += forwardBonus;
         } else if(alignment < -0.4f) {
           effectiveRads -= backwardPenalty;
         }
@@ -247,6 +254,7 @@ public class World {
     }
     for(Long key : toRemove) {
       chunks.remove(key);
+      requestedChunks.remove(key);
     }
   }
 

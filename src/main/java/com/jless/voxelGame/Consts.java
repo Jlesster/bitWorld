@@ -17,14 +17,14 @@ public final class Consts {
   };
 
   public static final int CHUNK_SIZE = 32;
-  public static final int WORLD_LIMIT = 256;
+  public static final int WORLD_LIMIT = 1024;
   public static final int WORLD_HEIGHT = 128;
   public static final int INIT_CHUNK_RADS = 8;
   public static final boolean ENABLE_GREEDY_MESHING = true;
   public static final int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
   public static final int UPLOAD_BATCH_SIZE = 2;
 
-  public static final float RENDER_DISTANCE = 22f;
+  public static final float RENDER_DISTANCE = 12f;
   public static final int STREAM_RADS = 8;
 
   public static final float FOG_START = RENDER_DISTANCE;
