@@ -11,6 +11,7 @@ import org.lwjgl.*;
 import org.joml.*;
 
 import com.jless.voxelGame.chunkGen.*;
+import com.jless.voxelGame.entity.*;
 import com.jless.voxelGame.lighting.*;
 import com.jless.voxelGame.player.*;
 import com.jless.voxelGame.texture.*;
@@ -45,6 +46,7 @@ public class App {
 
     Shaders.cacheLightingUniforms();
     Rendering.create();
+    EntityRender.create();
 
     ui = new UI();
     world = new World();
@@ -162,6 +164,13 @@ public class App {
       Rendering.renderWorld(world, playerPos, projMat, viewMat);
       ui.renderGUI();
 
+      float[] red = {1.0f, 0.0f, 0.0f};
+      EntityRender.drawEntityBox(
+       PlayerController.pos.x + 2, PlayerController.pos.y, PlayerController.pos.z,
+       PlayerController.pos.x + 3, PlayerController.pos.y + 2, PlayerController.pos.z + 1,
+       red
+      );
+
       glfwSwapBuffers(Window.getWindow());
     }
   }
@@ -199,6 +208,7 @@ public class App {
     lighting.cleanup();
     Rendering.cleanup();
     Shaders.cleanup();
+    EntityRender.cleanup();
     ChunkThreadManager.cleanup();
     ThreadSafePerlin.cleanup();
   }

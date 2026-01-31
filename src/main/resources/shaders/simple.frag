@@ -2,6 +2,8 @@
 
 uniform sampler2DArray uTex;
 uniform sampler2D uShadowMap;
+uniform int useSolidColor;
+uniform vec3 solidColor;
 uniform vec3 uSunDir;
 uniform vec3 uLightColor;
 uniform vec3 uAmbientColor;
@@ -60,25 +62,26 @@ float calculateShadow() {
 }
 
 void main() {
-  vec4 texColor = texture(uTex, vec3(vUV, float(vLayer)));
+  vec4 baseColor;
 
-  if(texColor.a < 0.1) discard;
+  if(useSolidColor == 1) {
+    baseColor = vec4(solidColor, 1.0);
+  } else {
+    baseColor = texture(uTex, vec3(vUV, float(vLayer)));
+    if(baseColor.a < 0.1) discard;
+  }
 
   vec3 normal = normalize(vNormal);
 
-  // Calculate diffuse lighting (N dot L)
   float diffuse = max(dot(normal, -uSunDir), 0.0);
 
-  // Calculate shadow factor (1.0 = fully lit, 0.0 = fully shadowed)
   float shadow = calculateShadow();
 
-  // Ambient light is always present
   vec3 ambient = uAmbientColor;
 
-  // Diffuse light is affected by shadows
   vec3 lighting = ambient + (uLightColor * diffuse * shadow);
 
-  vec3 finalColor = texColor.rgb * lighting;
+  vec3 finalColor = baseColor.rgb * lighting;
 
-  FragColor = vec4(finalColor, texColor.a);
+  FragColor = vec4(finalColor, baseColor.a);
 }

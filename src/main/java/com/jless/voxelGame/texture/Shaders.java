@@ -15,20 +15,22 @@ public class Shaders {
 
   public static Shaders instance;
 
-  private int uProjLocation = -1;
-  private int uViewLocation = -1;
-  private int uModelLocation = -1;
-  private int uTexLocation = -1;
+  private static int uProjLocation = -1;
+  private static int uViewLocation = -1;
+  private static int uModelLocation = -1;
+  private static int uTexLocation = -1;
   private static int uSunDirLocation = -1;
   private static int uLightColorLocation = -1;
   private static int uAmbientColorLocation = -1;
   private static int uShadowMapLocation = -1;
   private static int uShadowsEnabledLocation = -1;
   private static int uLightSpaceLocation = -1;
-  private int uFogColorLocation = -1;
-  private int uFogStartLocation = -1;
-  private int uFogEndLocation = -1;
-  private int uCameraPosLocation = -1;
+  private static int uFogColorLocation = -1;
+  private static int uFogStartLocation = -1;
+  private static int uFogEndLocation = -1;
+  private static int uCameraPosLocation = -1;
+  private static int uUseSolidColorLocation = -1;
+  private static int uSolidColorLocation = -1;
 
   private static int shaderProgram = 0;
   private static int vertShader = 0;
@@ -135,6 +137,8 @@ public class Shaders {
     uFogEndLocation = glGetUniformLocation(shaderProgram, "uFogEnd");
     uFogColorLocation = glGetUniformLocation(shaderProgram, "uFogColor");
     uCameraPosLocation = glGetUniformLocation(shaderProgram, "uCameraPos");
+    uUseSolidColorLocation = glGetUniformLocation(shaderProgram, "useSolidColor");
+    uSolidColorLocation = glGetUniformLocation(shaderProgram, "SolidColor");
 
     if(uProjLocation == -1 || uViewLocation == -1 || uModelLocation == -1) {
       throw new RuntimeException("Err: Failed to cache uniforms");
@@ -142,6 +146,40 @@ public class Shaders {
 
     if(uTexLocation == -1) {
       System.out.println("Warning: uTex not found");
+    }
+
+    if(uUseSolidColorLocation != -1) {
+      glUseProgram(shaderProgram);
+      glUniform1i(uUseSolidColorLocation, 0);
+      System.out.println("Info: solid color uniforms cached");
+    } else {
+      System.out.println("Err: Solid uniforms not cached");
+    }
+  }
+
+  public static void setUniformInt(String name, int value) {
+    int location = glGetUniformLocation(shaderProgram, name);
+    if(location != -1) {
+      glUniform1i(location, value);
+    }
+  }
+
+  public static void setUniformVec(String name, Vector3f vec) {
+    int location = glGetUniformLocation(shaderProgram, name);
+    if(location != -1) {
+      glUniform3f(location, vec.x, vec.y, vec.z);
+    }
+  }
+
+  public static void setUseSolidColor(int enabled) {
+    if(uUseSolidColorLocation != -1) {
+      glUniform1i(uUseSolidColorLocation, enabled);
+    }
+  }
+
+  public static void setSolidColor(Vector3f color) {
+    if(uSolidColorLocation != -1) {
+      glUniform3f(uSolidColorLocation, color.x, color.y, color.z);
     }
   }
 

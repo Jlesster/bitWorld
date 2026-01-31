@@ -54,5 +54,9 @@ public final class Consts {
 
   public static final float MOUSE_SENS = 0.15f;
 
+  public static final float ENTITY_SPAWN_INTERVAL = 10.0f;
+  public static final float ENTITY_RENDER_DISTANCE = 12.0f;
+  public static final int MAX_ENITITES = 64;
+
   private Consts() {}
 }
