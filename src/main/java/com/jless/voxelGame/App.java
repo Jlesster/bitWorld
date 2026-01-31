@@ -1,6 +1,7 @@
 package com.jless.voxelGame;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
 
 import java.lang.Math;
 import java.nio.*;
@@ -9,6 +10,8 @@ import org.lwjgl.*;
 
 import org.joml.*;
 
+import com.jless.voxelGame.chunkGen.*;
+import com.jless.voxelGame.lighting.*;
 import com.jless.voxelGame.player.*;
 import com.jless.voxelGame.texture.*;
 import com.jless.voxelGame.ui.*;
@@ -19,16 +22,25 @@ public class App {
   private UI ui;
   private World world;
   private Player player;
+  private Lighting lighting;
   private ChunkThreadManager threadManager;
   private PlayerController playerController;
   private FloatBuffer projMatrix;
   private FloatBuffer viewMatrix;
+  private FloatBuffer lightProjMatrix;
+  private FloatBuffer lightViewMatrix;
   private Matrix4f projMat = new Matrix4f();
   private Matrix4f viewMat = new Matrix4f();
 
   private void init() {
     Window.create(Consts.W_WIDTH, Consts.W_HEIGHT, Consts.W_TITLE);
     Shaders.create();
+
+    lighting = new Lighting();
+    lighting.initShadowMapping();
+
+    Shaders.cacheLightingUniforms();
+
     Rendering.create();
 
     ui = new UI();
@@ -73,6 +85,8 @@ public class App {
 
     projMatrix = BufferUtils.createFloatBuffer(16);
     viewMatrix = BufferUtils.createFloatBuffer(16);
+    lightProjMatrix = BufferUtils.createFloatBuffer(16);
+    lightViewMatrix = BufferUtils.createFloatBuffer(16);
 
     projMat.get(projMatrix);
   }
@@ -89,9 +103,19 @@ public class App {
   private void loop() {
     while(!glfwWindowShouldClose(Window.getWindow())) {
       Window.update();
+
+      float dt = 0.016f;
+      lighting.update(dt);
+
       threadManager.processUploads();
 
       Shaders.use();
+
+      Shaders.setSunDir(lighting.getSunDir());
+      Shaders.setLightColor(lighting.getLightColor());
+      Shaders.setAmbientColor(lighting.getAmbientColor());
+      Shaders.setLightSpaceMatrix(lighting.getLightSpaceMatrix());
+      Shaders.setShadowEnabled(lighting.areShadowsEnabled());
 
       Shaders.setFogParams(
         Consts.FOG_COLOR_R,
@@ -104,6 +128,16 @@ public class App {
       Shaders.setViewMatrix(viewMatrix);
       Shaders.setProjMatrix(projMatrix);
       Shaders.setCameraPos(PlayerController.pos);
+
+      Vector3f sky = lighting.getSkyColor();
+      glClearColor(sky.x, sky.y, sky.z, 1.0f);
+
+      if(lighting.areShadowsEnabled()) renderShadowPass();
+
+      if(lighting.areShadowsEnabled()) {
+        lighting.bindShadowMap(1);
+        Shaders.setShadowMap(1);
+      }
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
       playerController.update(world, 0.016f, jumpPressed, threadManager);
@@ -123,8 +157,36 @@ public class App {
     }
   }
 
+  private void renderShadowPass() {
+    Matrix4f lightProj = lighting.getLightProjMatrix();
+    Matrix4f lightView = lighting.getLightViewMatrix();
+
+    lightProj.get(lightProjMatrix);
+    lightView.get(lightViewMatrix);
+
+    lighting.beginShadowPass(PlayerController.pos);
+
+    Shaders.setProjMatrix(lightProjMatrix);
+    Shaders.setViewMatrix(lightViewMatrix);
+
+    glColorMask(false, false, false, false);
+
+    for(Chunk chunk : world.chunks.values()) {
+      if(chunk.uploaded && Chunk.isChunkVisible(chunk, PlayerController.pos)) {
+        chunk.drawVBO();
+      }
+    }
+
+    glColorMask(true, true, true, true);
+    lighting.endShadowPass(Consts.W_WIDTH, Consts.W_HEIGHT);
+
+    Shaders.setProjMatrix(projMatrix);
+    Shaders.setViewMatrix(viewMatrix);
+  }
+
   private void cleanup() {
     Window.destroy();
+    lighting.cleanup();
     Rendering.cleanup();
     Shaders.cleanup();
     ChunkThreadManager.cleanup();

@@ -11,6 +11,7 @@ uniform mat4 uModel;
 uniform mat4 uLightSpace;
 
 out vec2 vUV;
+out vec3 vPos;
 out vec3 vNormal;
 out vec2 vTexCoord;
 out vec4 vPosLightSpace;
@@ -21,12 +22,12 @@ void main() {
   vec4 worldPos = uModel * vec4(aPos, 1.0);
   vPos = worldPos.xyz;
 
-  vNormal = mat3(transpose(inverse(uModel))) * aNormal;
+  vNormal = mat3(transpose(inverse(uModel))) * aNorm;
 
-  vTexCoord = aTexCoord;
-  vLayer = aLayer;
+  vUV = aUV;
+  vLayer = int(aLayer);
 
-  vPosLightSpace = uLigthSpace * worldPos;
+  vPosLightSpace = uLightSpace * worldPos;
 
   gl_Position = uProj * uView * worldPos;
 }

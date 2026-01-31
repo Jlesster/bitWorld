@@ -94,7 +94,7 @@ public class Lighting {
   }
 
   public void update(float dt) {
-    timeOfDay += dt;
+    timeOfDay += dt / LightingConsts.DAY_LENGTH;
 
     if(timeOfDay >= 1.0f) {
       timeOfDay -= 1.0f;
@@ -179,21 +179,32 @@ public class Lighting {
 
     glViewport(0, 0, LightingConsts.SHADOW_MAP_SIZE, LightingConsts.SHADOW_MAP_SIZE);
 
-    float halfSize = LightingConsts.SHADOW_MAP_SIZE / 2.0f;
+    float shadowSize = LightingConsts.SHADOW_FRUSTUM_SIZE;
     lightProj.setOrtho(
-      -halfSize, halfSize,
-      -halfSize, halfSize,
+      -shadowSize, shadowSize,
+      -shadowSize, shadowSize,
       LightingConsts.SHADOW_NEAR,
       LightingConsts.SHADOW_FAR
     );
 
-    Vector3f lightPosition = new Vector3f(sunDir).mul(100.0f).add(playerPos);
+    Vector3f lightPosition = new Vector3f(sunDir).mul(-150.0f).add(playerPos);
 
     Vector3f lookAt = new Vector3f(playerPos);
     Vector3f up = new Vector3f(0, 1, 0);
+    if(Math.abs(sunDir.dot(up)) > 0.999f) {
+      up = new Vector3f(1, 0, 0);
+    }
 
     lightView.setLookAt(lightPosition, lookAt, up);
     lightSpaceMatrix.set(lightProj).mul(lightView);
+  }
+
+  public Matrix4f getLightViewMatrix() {
+    return new Matrix4f(lightView);
+  }
+
+  public Matrix4f getLightProjMatrix() {
+    return new Matrix4f(lightProj);
   }
 
   public void endShadowPass(int wWidth, int wHeight) {

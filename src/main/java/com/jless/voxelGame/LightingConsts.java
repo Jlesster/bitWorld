@@ -19,7 +19,8 @@ public class LightingConsts {
   public static final float[] MOON_COLOR = {0.4f, 0.5f, 0.8f};
 
   public static final boolean ENABLE_SHADOWS = true;
-  public static final int SHADOW_MAP_SIZE = 2048;
+  public static final int SHADOW_MAP_SIZE = 4096;
+  public static final int SHADOW_FRUSTUM_SIZE = 16;
 
   public static final float SHADOW_DISTANCE = 128.0f;
   public static final float SHADOW_NEAR = -100.0f;

@@ -6,6 +6,7 @@ import static org.lwjgl.opengl.GL20.*;
 import java.io.*;
 import java.nio.*;
 
+import org.lwjgl.*;
 import org.lwjgl.system.*;
 
 import org.joml.*;
@@ -18,6 +19,12 @@ public class Shaders {
   private int uViewLocation = -1;
   private int uModelLocation = -1;
   private int uTexLocation = -1;
+  private static int uSunDirLocation = -1;
+  private static int uLightColorLocation = -1;
+  private static int uAmbientColorLocation = -1;
+  private static int uShadowMapLocation = -1;
+  private static int uShadowsEnabledLocation = -1;
+  private static int uLightSpaceLocation = -1;
   private int uFogColorLocation = -1;
   private int uFogStartLocation = -1;
   private int uFogEndLocation = -1;
@@ -110,6 +117,15 @@ public class Shaders {
     return shader;
   }
 
+  public static void cacheLightingUniforms() {
+    uLightSpaceLocation = glGetUniformLocation(shaderProgram, "uLightSpace");
+    uSunDirLocation = glGetUniformLocation(shaderProgram, "uSunDir");
+    uLightColorLocation = glGetUniformLocation(shaderProgram, "uLightColor");
+    uAmbientColorLocation = glGetUniformLocation(shaderProgram, "uAmbientColor");
+    uShadowMapLocation = glGetUniformLocation(shaderProgram, "uShadowMap");
+    uShadowsEnabledLocation = glGetUniformLocation(shaderProgram, "uShadowsEnabled");
+  }
+
   private void cacheUniformLocations() {
     uProjLocation = glGetUniformLocation(shaderProgram, "uProj");
     uViewLocation = glGetUniformLocation(shaderProgram, "uView");
@@ -126,6 +142,44 @@ public class Shaders {
 
     if(uTexLocation == -1) {
       System.out.println("Warning: uTex not found");
+    }
+  }
+
+  public static void setLightSpaceMatrix(Matrix4f matrix) {
+    if(uLightSpaceLocation >= 0) {
+      FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+      matrix.get(buffer);
+      glUniformMatrix4fv(uLightSpaceLocation, false, buffer);
+    }
+  }
+
+  public static void setSunDir(Vector3f dir) {
+    if(uSunDirLocation >= 0) {
+      glUniform3f(uSunDirLocation, dir.x, dir.y, dir.z);
+    }
+  }
+
+  public static void setLightColor(Vector3f color) {
+    if(uLightColorLocation >= 0) {
+      glUniform3f(uLightColorLocation, color.x, color.y, color.z);
+    }
+  }
+
+  public static void setAmbientColor(Vector3f color) {
+    if(uAmbientColorLocation >= 0) {
+      glUniform3f(uAmbientColorLocation, color.x, color.y, color.z);
+    }
+  }
+
+  public static void setShadowMap(int texUnit) {
+    if(uShadowMapLocation >= 0) {
+      glUniform1i(uShadowMapLocation, texUnit);
+    }
+  }
+
+  public static void setShadowEnabled(boolean enabled) {
+    if(uShadowsEnabledLocation >= 0) {
+      glUniform1i(uShadowsEnabledLocation, enabled ? 1 : 0);
     }
   }
 

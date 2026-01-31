@@ -27,8 +27,8 @@ public final class Consts {
   public static final float RENDER_DISTANCE = 12f;
   public static final int STREAM_RADS = 8;
 
-  public static final float FOG_START = RENDER_DISTANCE;
-  public static final float FOG_END = 120.0f;
+  public static final float FOG_START = RENDER_DISTANCE / 2.0f;
+  public static final float FOG_END = 20.0f;
   public static final float FOG_COLOR_R = 0.5f;
   public static final float FOG_COLOR_G = 0.7f;
   public static final float FOG_COLOR_B = 1.0f;
@@ -43,12 +43,12 @@ public final class Consts {
   public static final float PLAYER_HEIGHT = 1.8f;
 
   public static final float MAX_GROUND_SPEED = 6.0f;
-  public static final float MAX_AIR_SPEED = 4.5f;
+  public static final float MAX_AIR_SPEED = 5.5f;
   public static final float GROUND_ACCEL = 40.0f;
   public static final float AIR_ACCEL = 15.0f;
   public static final float GROUND_FRICTION = 20.0f;
-  public static final float GRAVITY = -30.0f;
-  public static final float JUMP_VEL = 9.0f;
+  public static final float GRAVITY = -20.0f;
+  public static final float JUMP_VEL = 8.0f;
 
   public static final float MOUSE_SENS = 0.15f;
 
