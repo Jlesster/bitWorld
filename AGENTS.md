@@ -156,9 +156,40 @@ com.jless.voxelGame/
 - Profile with Java VisualVM or similar tools
 - Consider object pooling for frequently created objects
 
+### Timing and Game Loop
+- **CRITICAL**: Never use hardcoded delta time values
+- Always measure real frame time with `glfwGetTime()`
+- Use `float dt` for all physics and movement calculations
+- Clamp delta time to prevent physics issues (max 0.1f recommended)
+- Normalize mouse input by delta time for consistent sensitivity
+- Consider frame time smoothing for smoother gameplay
+
+### Time-Relative Implementation Pattern
+```java
+// In game loop:
+double currentTime = glfwGetTime();
+float dt = (float)(currentTime - lastTime);
+lastTime = currentTime;
+
+// Clamp and optionally smooth:
+dt = Math.min(dt, 0.1f);
+// smoothedDt = smoothedDt * (1.0f - factor) + dt * factor;
+
+// Use dt in all updates:
+playerController.update(world, dt, jumpPressed, threadManager);
+lighting.update(dt);
+
+// Mouse input normalization:
+float timeFactor = dt * 60.0f; // Normalize to 60 FPS baseline
+yaw += mouseDX * MOUSE_SENS * timeFactor;
+```
+
 ## Important Reminders
 - Never commit secrets or API keys
 - Follow existing code patterns and conventions
 - Test thoroughly before committing changes
 - Document complex algorithms with clear comments
 - Keep game loop performance in mind when adding features
+- Always test gameplay at different framerates (30, 60, 144+ FPS)
+- Verify mouse sensitivity consistency across framerates
+- Use DEVELOPMENT.md for session-specific context and plans
