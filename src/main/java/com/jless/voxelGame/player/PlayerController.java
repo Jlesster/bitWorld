@@ -51,9 +51,10 @@ public class PlayerController {
     return viewMat;
   }
 
-  public void processMouse(float dx, float dy) {
-    yaw += (float)Math.toRadians(dx * Consts.MOUSE_SENS);
-    pitch += (float)Math.toRadians(dy * Consts.MOUSE_SENS);
+  public void processMouse(float dx, float dy, float dt) {
+    float timeFactor = dt * 60.0f;
+    yaw += (float)Math.toRadians(dx * Consts.MOUSE_SENS * timeFactor);
+    pitch += (float)Math.toRadians(dy * Consts.MOUSE_SENS * timeFactor);
 
     if(pitch > Math.toRadians(89.0f)) pitch = (float)Math.toRadians(89.0f);
     if(pitch < Math.toRadians(-89.0f)) pitch = (float)Math.toRadians(-89.0f);
@@ -112,7 +113,7 @@ public class PlayerController {
       onGround = false;
     }
 
-    if(onGround && wishMoving == false) {
+    if(onGround && !wishMoving) {
       velocity.x *= 0.8f;
       velocity.z *= 0.8f;
     }
@@ -236,11 +237,11 @@ public class PlayerController {
     return false;
   }
 
-  private void updateCameraRotation() {
+  private void updateCameraRotation(float dt) {
     float mouseDX = Input.getMouseDX();
     float mouseDY = Input.getMouseDY();
 
-    processMouse(mouseDX, mouseDY);
+    processMouse(mouseDX, mouseDY, dt);
   }
 
   public void update(World world, float dt, boolean jumpPressed, ChunkThreadManager threadManager) {
@@ -253,7 +254,7 @@ public class PlayerController {
       lastCZ = playerCZ;
     }
 
-    updateCameraRotation();
+    updateCameraRotation(dt);
     handleInput(dt);
     applyPhysics(world, dt, jumpPressed);
   }

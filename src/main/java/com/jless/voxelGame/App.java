@@ -32,6 +32,10 @@ public class App {
   private Matrix4f projMat = new Matrix4f();
   private Matrix4f viewMat = new Matrix4f();
 
+  private double lastTime = 0.0;
+  private double currTime = 0.0;
+  private float smoothedDT = 0.016f;
+
   private void init() {
     Window.create(Consts.W_WIDTH, Consts.W_HEIGHT, Consts.W_TITLE);
     Shaders.create();
@@ -40,19 +44,16 @@ public class App {
     lighting.initShadowMapping();
 
     Shaders.cacheLightingUniforms();
-
     Rendering.create();
 
     ui = new UI();
     world = new World();
     threadManager = new ChunkThreadManager(world);
     world.generateSpawnAsync(threadManager);
-
     ui.initGUI(Window.getWindow());
 
     int maxWait = 50;
     int waited = 0;
-
     while(waited < maxWait) {
       try {
         Thread.sleep(100);
@@ -77,6 +78,7 @@ public class App {
 
     setupMatrices();
     Input.setup(Window.getWindow());
+    lastTime = glfwGetTime();
   }
 
   private void setupMatrices() {
@@ -102,9 +104,16 @@ public class App {
 
   private void loop() {
     while(!glfwWindowShouldClose(Window.getWindow())) {
+      currTime = glfwGetTime();
+      float rawDT = (float)(currTime - lastTime);
+      lastTime = currTime;
+      rawDT = Math.min(rawDT, 0.1f);
+
+      smoothedDT = smoothedDT * (1.0f - Consts.DT_SMOOTHING_FACTOR) + rawDT * Consts.DT_SMOOTHING_FACTOR;
+      float dt = smoothedDT;
+
       Window.update();
 
-      float dt = 0.016f;
       lighting.update(dt);
 
       threadManager.processUploads();
@@ -140,7 +149,7 @@ public class App {
       }
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
-      playerController.update(world, 0.016f, jumpPressed, threadManager);
+      playerController.update(world, dt, jumpPressed, threadManager);
       playerController.getViewMatrix().get(viewMat);
       viewMat.get(viewMatrix);
 
@@ -183,6 +192,7 @@ public class App {
     Shaders.setProjMatrix(projMatrix);
     Shaders.setViewMatrix(viewMatrix);
   }
+
 
   private void cleanup() {
     Window.destroy();

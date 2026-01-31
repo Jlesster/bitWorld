@@ -16,6 +16,8 @@ public final class Consts {
     1000, 2000, 4000
   };
 
+  public static final float DT_SMOOTHING_FACTOR = 0.2f;
+
   public static final int CHUNK_SIZE = 32;
   public static final int WORLD_LIMIT = 1024;
   public static final int WORLD_HEIGHT = 128;
@@ -42,13 +44,13 @@ public final class Consts {
   public static final float PLAYER_WIDTH = 0.6f;
   public static final float PLAYER_HEIGHT = 1.8f;
 
-  public static final float MAX_GROUND_SPEED = 6.0f;
-  public static final float MAX_AIR_SPEED = 5.5f;
+  public static final float MAX_GROUND_SPEED = 19.0f;
+  public static final float MAX_AIR_SPEED = 15.5f;
   public static final float GROUND_ACCEL = 40.0f;
-  public static final float AIR_ACCEL = 15.0f;
+  public static final float AIR_ACCEL = 35.0f;
   public static final float GROUND_FRICTION = 20.0f;
-  public static final float GRAVITY = -20.0f;
-  public static final float JUMP_VEL = 8.0f;
+  public static final float GRAVITY = -30.0f;
+  public static final float JUMP_VEL = 9.0f;
 
   public static final float MOUSE_SENS = 0.15f;
 
