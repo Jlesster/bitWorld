@@ -287,8 +287,8 @@ public class EntityPig extends Entity {
     // Body
     EntityRender.drawEntityWithTransform(
       entityModel,
-      0.0f, 0.75f, 0.0f,
-      1.0f, 1.4f, 2.0f,
+      0.5f, 0.75f, 0.5f,
+      1.5f, 1.4f, 2.0f,
       pink
     );
 

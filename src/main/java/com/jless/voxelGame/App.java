@@ -55,6 +55,8 @@ public class App {
     world.generateSpawnAsync(threadManager);
     ui.initGUI(Window.getWindow());
 
+    entityManager.init(world);
+
     int maxWait = 50;
     int waited = 0;
     while(waited < maxWait) {
