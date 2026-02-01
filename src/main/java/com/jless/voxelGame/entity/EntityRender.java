@@ -147,16 +147,18 @@ public class EntityRender {
 
     renderer.modelMatrix.identity().translate(cx, cy, cz).scale(sx, sy, sz).get(renderer.matrixBuffer);
 
-    Shaders.setModelMatrix(renderer.matrixBuffer);
-    Shaders.setUniformInt("useSolidColor", 1);
-    renderer.colorVector.set(rgb[0], rgb[1], rgb[2]);
-    Shaders.setUniformVec("solidColor", renderer.colorVector);
+    try {
+      Shaders.setModelMatrix(renderer.matrixBuffer);
+      Shaders.setUniformInt("useSolidColor", 1);
+      renderer.colorVector.set(rgb[0], rgb[1], rgb[2]);
+      Shaders.setUniformVec("solidColor", renderer.colorVector);
 
-    glBindVertexArray(renderer.entityVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    Shaders.setUniformInt("useSolidColor", 0);
+      glBindVertexArray(renderer.entityVAO);
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    } finally {
+      glBindVertexArray(0);
+      Shaders.setUniformInt("useSolidColor", 0);
+    }
   }
 
   public static void drawEntityWithTransform(
@@ -180,16 +182,17 @@ public class EntityRender {
 
     renderer.modelMatrix.set(entityModel).translate(minX, minY, minZ).scale(sx, sy, sz).get(renderer.matrixBuffer);
 
-    Shaders.setModelMatrix(renderer.matrixBuffer);
-    Shaders.setUniformInt("useSolidColor", 1);
-    renderer.colorVector.set(rgb[0], rgb[1], rgb[2]);
-    Shaders.setUniformVec("solidColor", renderer.colorVector);
-
-    glBindVertexArray(renderer.entityVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    Shaders.setUniformInt("useSolidColor", 0);
+    try {
+      Shaders.setModelMatrix(renderer.matrixBuffer);
+      Shaders.setUniformInt("useSolidColor", 1);
+      renderer.colorVector.set(rgb[0], rgb[1], rgb[2]);
+      Shaders.setUniformVec("solidColor", renderer.colorVector);
+      glBindVertexArray(renderer.entityVAO);
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    } finally {
+      glBindVertexArray(0);
+      Shaders.setUniformInt("useSolidColor", 0);
+    }
   }
 
   public static void drawTexturedEntityBox(
@@ -222,6 +225,12 @@ public class EntityRender {
     glBindVertexArray(renderer.entityVAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+  }
+
+  public static void resetModelMatrix() {
+    EntityRender renderer = getInstance();
+    renderer.modelMatrix.identity().get(renderer.matrixBuffer);
+    Shaders.setModelMatrix(renderer.matrixBuffer);
   }
 
   public static void cleanup() {

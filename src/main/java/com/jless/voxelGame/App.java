@@ -32,6 +32,7 @@ public class App {
   private FloatBuffer lightViewMatrix;
   private Matrix4f projMat = new Matrix4f();
   private Matrix4f viewMat = new Matrix4f();
+  private EntityManager entityManager = new EntityManager();
 
   private double lastTime = 0.0;
   private double currTime = 0.0;
@@ -115,11 +116,10 @@ public class App {
       float dt = smoothedDT;
 
       Window.update();
-
-      lighting.update(dt);
-
+      Rendering.beginFrame();
       threadManager.processUploads();
 
+      lighting.update(dt);
       Shaders.use();
 
       Shaders.setSunDir(lighting.getSunDir());
@@ -158,18 +158,12 @@ public class App {
       Input.update(player);
       player.blockManip();
 
-      Rendering.beginFrame();
-
       Vector3f playerPos = PlayerController.pos;
       Rendering.renderWorld(world, playerPos, projMat, viewMat);
-      ui.renderGUI();
 
-      float[] red = {1.0f, 0.0f, 0.0f};
-      EntityRender.drawEntityBox(
-       PlayerController.pos.x + 2, PlayerController.pos.y, PlayerController.pos.z,
-       PlayerController.pos.x + 3, PlayerController.pos.y + 2, PlayerController.pos.z + 1,
-       red
-      );
+      ui.renderGUI();
+      entityManager.update(world, playerPos, dt);
+      entityManager.render(Rendering.getRenderer());
 
       glfwSwapBuffers(Window.getWindow());
     }
@@ -195,11 +189,16 @@ public class App {
       }
     }
 
+    entityManager.render(Rendering.getRenderer());
+
     glColorMask(true, true, true, true);
+    glDepthMask(true);
+
     lighting.endShadowPass(Consts.W_WIDTH, Consts.W_HEIGHT);
 
     Shaders.setProjMatrix(projMatrix);
     Shaders.setViewMatrix(viewMatrix);
+    EntityRender.resetModelMatrix();
   }
 
 

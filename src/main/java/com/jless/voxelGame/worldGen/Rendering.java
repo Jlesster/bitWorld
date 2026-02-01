@@ -87,6 +87,10 @@ public class Rendering {
     return distSq <= (maxDist * maxDist);
   }
 
+  public static Rendering getRenderer() {
+    return instance;
+  }
+
   public static void cleanup() {
     if(instance != null) {
       instance = null;
