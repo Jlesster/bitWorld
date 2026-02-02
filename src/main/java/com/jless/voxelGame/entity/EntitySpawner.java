@@ -23,10 +23,10 @@ public class EntitySpawner {
     public SpawnConfig() {
       this.minRadius = Consts.ENTITY_SPAWN_RADIUS * 0.3f;
       this.maxRadius = Consts.ENTITY_SPAWN_RADIUS;
-      this.maxAttempts = 5;
-      this.maxEntitiesPerChunk = Consts.MAX_ENITITES / 4;
-      this.maxEntitiesGlobal = Consts.MAX_ENITITES;
-      this.spawnChance = 0.7f;
+      this.maxAttempts = 20;
+      this.maxEntitiesPerChunk = Consts.MAX_ENTITIES / 4;
+      this.maxEntitiesGlobal = Consts.MAX_ENTITIES;
+      this.spawnChance = 1.0f;
     }
   }
 
@@ -71,13 +71,19 @@ public class EntitySpawner {
       SpawnLocation location = findSpawnLocation(centerPos);
       if(location == null) continue;
 
+      boolean allCondsMet = true;
+      String failReason = "";
+
       for(SpawnCondition condition : conditions) {
         if(!condition.canSpawn(world, location.x, location.y, location.z)) {
-          if(attempt == config.maxAttempts - 1) {
-            return new SpawnResult(false, condition.getFailureReason(), null);
-          }
-          continue;
+          allCondsMet = false;
+          failReason = condition.getFailureReason();
+          break;
         }
+      }
+      if(!allCondsMet) {
+        System.out.println("Spawn attempt " + attempt + " failed: " + failReason + " at (" + location.x + ", " + location.y + ", " + location.z + ")");
+        continue;
       }
 
       Entity entity = createEntity(type, location);
@@ -133,7 +139,7 @@ public class EntitySpawner {
       @Override
       public boolean canSpawn(World world, int x, int y, int z) {
         int cx = Math.floorDiv(x, Consts.CHUNK_SIZE);
-        int cz = Math.floorDiv(x, Consts.CHUNK_SIZE);
+        int cz = Math.floorDiv(z, Consts.CHUNK_SIZE);
         return getEntityCountInChunk(cx, cz) < config.maxEntitiesPerChunk;
       }
 

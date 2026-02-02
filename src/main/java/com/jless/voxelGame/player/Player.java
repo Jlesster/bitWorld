@@ -10,12 +10,16 @@ public class Player {
   public static boolean breakReq = false;
   public static boolean placeReq = false;
   public byte block = BlockID.GRASS;
+
+  private PlayerHand hand;
   private World world;
 
   public void blockManip() {
     if(breakReq) {
       breakReq = false;
       System.out.println("Break req fired");
+
+      hand.startSwinging();
 
       RaycastHit hit = Raycast.raycast(world, PlayerController.getEyePos(), PlayerController.getForwardDir(), 60.0f);
       if(hit != null) {
@@ -31,6 +35,8 @@ public class Player {
       placeReq = false;
       System.out.println("PlaceReqFired");
       byte placeID = block;
+
+      hand.startSwinging();
 
       RaycastHit hit = Raycast.raycast(world, PlayerController.getEyePos(), PlayerController.getForwardDir(), 6.0f);
 
@@ -54,7 +60,16 @@ public class Player {
     return block;
   }
 
+  public void updateHand(float dt, Vector3f vel) {
+    hand.update(dt, vel);
+  }
+
+  public void renderHand() {
+    hand.render(block);
+  }
+
   public Player(World w) {
     this.world = w;
+    this.hand = new PlayerHand();
   }
 }

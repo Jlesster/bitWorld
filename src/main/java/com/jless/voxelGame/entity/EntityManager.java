@@ -29,8 +29,8 @@ public class EntityManager {
       Entity e = entities.get(i);
       e.update(world, dt);
 
-      float dx = e.pos.x;
-      float dz = e.pos.z;
+      float dx = e.pos.x - playerPos.x;
+      float dz = e.pos.z - playerPos.z;
 
       float dist2 = (dx * dx) + (dz * dz);
 
@@ -42,7 +42,7 @@ public class EntityManager {
     spawnTimer -= dt;
     if(spawnTimer <= 0 ) {
       spawnTimer = Consts.ENTITY_SPAWN_INTERVAL;
-      if(entities.size() < Consts.MAX_ENITITES) {
+      if(entities.size() < Consts.MAX_ENTITIES) {
         SpawnResult result = spawner.trySpawnPig(playerPos);
 
         if(result.success) {

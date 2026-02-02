@@ -118,7 +118,6 @@ public class App {
       float dt = smoothedDT;
 
       Window.update();
-      Rendering.beginFrame();
       threadManager.processUploads();
 
       lighting.update(dt);
@@ -159,6 +158,9 @@ public class App {
 
       Input.update(player);
       player.blockManip();
+      player.updateHand(dt, playerController.velocity);
+
+      Rendering.beginFrame();
 
       Vector3f playerPos = PlayerController.pos;
       Rendering.renderWorld(world, playerPos, projMat, viewMat);
@@ -167,6 +169,9 @@ public class App {
       entityManager.update(world, playerPos, dt);
       entityManager.render(Rendering.getRenderer());
 
+      player.renderHand();
+
+      Shaders.setViewMatrix(viewMatrix);
       glfwSwapBuffers(Window.getWindow());
     }
   }
@@ -202,7 +207,6 @@ public class App {
     Shaders.setViewMatrix(viewMatrix);
     EntityRender.resetModelMatrix();
   }
-
 
   private void cleanup() {
     Window.destroy();

@@ -12,7 +12,7 @@ import com.jless.voxelGame.worldGen.*;
 
 public class PlayerController {
 
-  private Vector3f velocity = new Vector3f();
+  public Vector3f velocity = new Vector3f();
   public static Vector3f pos;
   private Matrix4f viewMat;
 

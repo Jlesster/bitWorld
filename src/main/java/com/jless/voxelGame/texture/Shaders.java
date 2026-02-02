@@ -31,6 +31,7 @@ public class Shaders {
   private static int uCameraPosLocation = -1;
   private static int uUseSolidColorLocation = -1;
   private static int uSolidColorLocation = -1;
+  private static int uTexLayerLocation = -1;
 
   private static int shaderProgram = 0;
   private static int vertShader = 0;
@@ -133,12 +134,13 @@ public class Shaders {
     uViewLocation = glGetUniformLocation(shaderProgram, "uView");
     uModelLocation = glGetUniformLocation(shaderProgram, "uModel");
     uTexLocation = glGetUniformLocation(shaderProgram, "uTex");
+    uTexLayerLocation = glGetUniformLocation(shaderProgram, "vLayer");
     uFogStartLocation = glGetUniformLocation(shaderProgram, "uFogStart");
     uFogEndLocation = glGetUniformLocation(shaderProgram, "uFogEnd");
     uFogColorLocation = glGetUniformLocation(shaderProgram, "uFogColor");
     uCameraPosLocation = glGetUniformLocation(shaderProgram, "uCameraPos");
     uUseSolidColorLocation = glGetUniformLocation(shaderProgram, "useSolidColor");
-    uSolidColorLocation = glGetUniformLocation(shaderProgram, "SolidColor");
+    uSolidColorLocation = glGetUniformLocation(shaderProgram, "solidColor");
 
     if(uProjLocation == -1 || uViewLocation == -1 || uModelLocation == -1) {
       throw new RuntimeException("Err: Failed to cache uniforms");
@@ -161,6 +163,13 @@ public class Shaders {
     int location = glGetUniformLocation(shaderProgram, name);
     if(location != -1) {
       glUniform1i(location, value);
+    }
+  }
+
+  public static void setUniformFloat(String name, float value) {
+    int location = glGetUniformLocation(shaderProgram, name);
+    if(location != -1) {
+      glUniform1f(location, value);
     }
   }
 
@@ -261,6 +270,12 @@ public class Shaders {
     }
     if(instance.uFogEndLocation != -1) {
       glUniform1f(instance.uFogEndLocation, end);
+    }
+  }
+
+  public static void setTexLayer(int layer) {
+    if(uTexLayerLocation != -1) {
+      glUniform1f(uTexLayerLocation, layer);
     }
   }
 

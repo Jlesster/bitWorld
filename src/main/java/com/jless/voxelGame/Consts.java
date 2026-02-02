@@ -54,10 +54,10 @@ public final class Consts {
 
   public static final float MOUSE_SENS = 0.15f;
 
-  public static final float ENTITY_SPAWN_INTERVAL = 2.0f;
-  public static final float ENTITY_RENDER_DISTANCE = 12.0f;
-  public static final int MAX_ENITITES = 128;
-  public static final float ENTITY_SPAWN_RADIUS = 80f;
+  public static final float ENTITY_SPAWN_INTERVAL = 0.7f;
+  public static final float ENTITY_RENDER_DISTANCE = CHUNK_SIZE * RENDER_DISTANCE;
+  public static final int MAX_ENTITIES = 128;
+  public static final float ENTITY_SPAWN_RADIUS = 22f;
 
   private Consts() {}
 }

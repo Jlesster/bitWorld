@@ -125,7 +125,7 @@ public class EntityPig extends Entity {
     float xMin = x - rx;
     float xMax = x + rx;
     float zMin = z - rz;
-    float zMax = z + rz;  // FIXED: was z + rx
+    float zMax = z + rz;
 
     int bx0 = (int)Math.floor(xMin);
     int bx1 = (int)Math.floor(xMax);
@@ -259,7 +259,7 @@ public class EntityPig extends Entity {
 
     float moveSq = (dx * dx) + (dz * dz);
     if(moveSq > 0.0001f) {
-      targetYaw = (float)Math.toDegrees(Math.atan2(-dx, -dz));
+      targetYaw = (float)Math.toDegrees(Math.atan2(dx, dz));
     }
 
     float turnSpeed = 180f;
@@ -272,39 +272,58 @@ public class EntityPig extends Entity {
 
   @Override
   public void render(Rendering render) {
-    // Base transform for the entire entity
     Matrix4f entityModel = new Matrix4f()
       .translate(pos.x, pos.y, pos.z)
       .rotateY((float)Math.toRadians(yawDeg))
-      .translate(-0.0f, 0.0f, -0.0f)
-      .scale(    0.7f);
+      .scale(0.7f);
 
     // Colors
     float[] pink = new float[]{1.0f, 0.65f, 0.8f};
     float[] pinkDark = new float[]{0.95f, 0.55f, 0.75f};
     float[] legColor = new float[]{0.9f, 0.5f, 0.7f};
 
+    float legHeight = 0.5f;
+    float bodyWidth = 0.9f;
+    float bodyHeight = 0.5f;
+    float bodyLength = 1.2f;
+    float bodyY0 = legHeight;
+    float bodyY1 = bodyY0 + bodyHeight;
+
+    float headWidth = 0.6f;
+    float headHeight = 0.7f;
+    float headLength = 0.6f;
+    float headZ = bodyLength * 0.4f ;  // Start at front of body
+    float headY0 = bodyY0 + 0.2f;
+    float headY1 = bodyY0 + headHeight;
+
+    float snoutWidth = 0.4f;
+    float snoutHeight = 0.25f;
+    float snoutLength = 0.2f;
+    float snoutZ = headZ + headLength;
+    float snoutY0 = headY0 + 0.1f;
+    float snoutY1 = snoutY0 + snoutHeight;
+
     // Body
     EntityRender.drawEntityWithTransform(
       entityModel,
-      0.5f, 0.75f, 0.5f,
-      1.5f, 1.4f, 2.0f,
+      -bodyWidth / 2, bodyY0, -bodyLength / 2,
+      bodyWidth / 2,bodyY1, bodyLength / 2,
       pink
     );
 
     // Head
     EntityRender.drawEntityWithTransform(
       entityModel,
-      0.15f, 1.2f, 1.85f,
-      0.85f, 1.75f, 2.35f,
+      -headWidth / 2, headY0, headZ,
+      headWidth / 2, headY1, headZ + headLength,
       pinkDark
     );
 
     // Snout
     EntityRender.drawEntityWithTransform(
       entityModel,
-      0.3f, 1.35f, 2.35f,
-      0.7f, 1.6f, 2.55f,
+      -snoutWidth / 2, snoutY0, snoutZ,
+      snoutWidth / 2, snoutY1, snoutZ + snoutLength,
       pink
     );
 
@@ -312,65 +331,67 @@ public class EntityPig extends Entity {
     float legSwing = 0f;
     float moveSq = vel.x * vel.x + vel.z * vel.z;
     if(moveSq > 0.0001f) {
-      legSwing = (float)Math.sin(animTime) * 0.5f;  // Radians for rotation
+      legSwing = (float)Math.sin(animTime) * 0.4f;  // Radians for rotation
     }
 
-    // Hip positions for leg pivots
-    float hipY = 0.90f;
-    float frontZ = 1.6f;
-    float backZ = 0.4f;
-    float leftX = 0.15f;
-    float rightX = 0.65f;
+    // Leg dimensions
+    float legWidth = 0.25f;
+    float legDepth = 0.25f;
+
+    // Leg positions (X, Z relative to body center)
+    float legOffsetX = bodyWidth/2 - legWidth/2 - 0.05f;
+    float frontLegZ = bodyLength/2 - legDepth/2 - 0.1f;
+    float backLegZ = -bodyLength/2 + legDepth/2 + 0.1f;
 
     // Front Left Leg
     Matrix4f frontLeftLeg = withPivotRotationX(
       entityModel,
-      leftX + 0.15f, hipY, frontZ,
+      -legOffsetX, legHeight, frontLegZ,
       legSwing
     );
     EntityRender.drawEntityWithTransform(
       frontLeftLeg,
-      leftX, 0.15f, frontZ,
-      leftX + 0.3f, hipY, frontZ + 0.25f,
+      -legOffsetX - legWidth/2, 0.0f, frontLegZ - legDepth/2,
+      -legOffsetX + legWidth/2, legHeight, frontLegZ + legDepth/2,
       legColor
     );
 
     // Front Right Leg
     Matrix4f frontRightLeg = withPivotRotationX(
       entityModel,
-      rightX + 0.15f, hipY, frontZ,
+      legOffsetX, legHeight, frontLegZ,
       -legSwing
     );
     EntityRender.drawEntityWithTransform(
       frontRightLeg,
-      rightX, 0.15f, frontZ,
-      rightX + 0.3f, hipY, frontZ + 0.25f,
+      legOffsetX - legWidth/2, 0.0f, frontLegZ - legDepth/2,
+      legOffsetX + legWidth/2, legHeight, frontLegZ + legDepth/2,
       legColor
     );
 
     // Back Left Leg
     Matrix4f backLeftLeg = withPivotRotationX(
       entityModel,
-      leftX + 0.15f, hipY, backZ,
+      -legOffsetX, legHeight, backLegZ,
       -legSwing
     );
     EntityRender.drawEntityWithTransform(
       backLeftLeg,
-      leftX, 0.15f, backZ,
-      leftX + 0.3f, hipY, backZ + 0.25f,
+      -legOffsetX - legWidth/2, 0.0f, backLegZ - legDepth/2,
+      -legOffsetX + legWidth/2, legHeight, backLegZ + legDepth/2,
       legColor
     );
 
     // Back Right Leg
     Matrix4f backRightLeg = withPivotRotationX(
       entityModel,
-      rightX + 0.15f, hipY, backZ,
+      legOffsetX, legHeight, backLegZ,
       legSwing
     );
     EntityRender.drawEntityWithTransform(
       backRightLeg,
-      rightX, 0.15f, backZ,
-      rightX + 0.3f, hipY, backZ + 0.25f,
+      legOffsetX - legWidth/2, 0.0f, backLegZ - legDepth/2,
+      legOffsetX + legWidth/2, legHeight, backLegZ + legDepth/2,
       legColor
     );
   }
