@@ -1,22 +1,92 @@
 # DEVELOPMENT.md - Complete Development Guide & Session Context
 
+<!--toc:start-->
+- [DEVELOPMENT.md - Complete Development Guide & Session Context](#developmentmd-complete-development-guide-session-context)
+  - [Current Session Status](#current-session-status)
+  - [🎯 Immediate Implementation Priority: Time-Relative Game Systems](#🎯-immediate-implementation-priority-time-relative-game-systems)
+    - [Issue Identified](#issue-identified)
+    - [Implementation Plan (Ready to Execute)](#implementation-plan-ready-to-execute)
+      - [Step 1: Add Timing Variables to App.java](#step-1-add-timing-variables-to-appjava)
+      - [Step 2: Initialize Last Time in init() Method](#step-2-initialize-last-time-in-init-method)
+      - [Step 3: Replace Hardcoded Delta Time in loop() Method](#step-3-replace-hardcoded-delta-time-in-loop-method)
+      - [Step 4: Update PlayerController Call](#step-4-update-playercontroller-call)
+      - [Step 5: Fix Mouse Input Time Normalization](#step-5-fix-mouse-input-time-normalization)
+      - [Step 6: Testing & Verification](#step-6-testing-verification)
+  - [🏗️ Architecture Overview](#🏗️-architecture-overview)
+    - [Core Architecture](#core-architecture)
+    - [Current Systems Status](#current-systems-status)
+    - [Code Quality Assessment](#code-quality-assessment)
+  - [🌍 World Generation Enhancement Guide](#🌍-world-generation-enhancement-guide)
+    - [Available Features (Ready to Implement)](#available-features-ready-to-implement)
+      - [1. Enhanced Noise System](#1-enhanced-noise-system)
+      - [2. Complete Biome System](#2-complete-biome-system)
+      - [3. Advanced Terrain Generation](#3-advanced-terrain-generation)
+      - [4. Procedural Tree System](#4-procedural-tree-system)
+      - [5. Cave Systems](#5-cave-systems)
+      - [6. Ore Distribution](#6-ore-distribution)
+      - [Implementation Status](#implementation-status)
+  - [🎮 UI System Guide](#🎮-ui-system-guide)
+    - [Complete UI/Inventory System Available](#complete-uiinventory-system-available)
+      - [1. UI Rendering Foundation](#1-ui-rendering-foundation)
+      - [2. Hotbar System](#2-hotbar-system)
+      - [3. Inventory Management](#3-inventory-management)
+      - [4. Health System](#4-health-system)
+      - [5. Advanced Features](#5-advanced-features)
+      - [Implementation Status](#implementation-status-1)
+  - [🧍 Entity Port Guide](#🧍-entity-port-guide)
+    - [Entity System Migration Required](#entity-system-migration-required)
+      - [Critical Issues Identified](#critical-issues-identified)
+      - [Migration Steps](#migration-steps)
+      - [Key Changes Required](#key-changes-required)
+      - [Implementation Status](#implementation-status-2)
+  - [📅 Development Roadmap](#📅-development-roadmap)
+    - [Comprehensive 8-Week Development Plan](#comprehensive-8-week-development-plan)
+      - [Phase 1: Entity System Foundation (Week 1-2)](#phase-1-entity-system-foundation-week-1-2)
+      - [Phase 2: Inventory System (Week 3)](#phase-2-inventory-system-week-3)
+      - [Phase 3: Crafting System (Week 4)](#phase-3-crafting-system-week-4)
+      - [Phase 4: Crafting UI System (Week 5)](#phase-4-crafting-ui-system-week-5)
+      - [Phase 5: Advanced Features (Week 6-7)](#phase-5-advanced-features-week-6-7)
+      - [Phase 6: Polish and Optimization (Week 8)](#phase-6-polish-and-optimization-week-8)
+      - [Implementation Status](#implementation-status-3)
+  - [💡 Lighting System Tutorial](#💡-lighting-system-tutorial)
+    - [Complete Day/Night Cycle System Available](#complete-daynight-cycle-system-available)
+      - [Core Features](#core-features)
+      - [Shadow Mapping (Optional)](#shadow-mapping-optional)
+      - [Advanced Features](#advanced-features)
+      - [Implementation Status](#implementation-status-4)
+  - [🔧 Development Standards & Patterns](#🔧-development-standards-patterns)
+    - [Build Commands (From AGENTS.md)](#build-commands-from-agentsmd)
+    - [Code Style Guidelines (From AGENTS.md)](#code-style-guidelines-from-agentsmd)
+      - [Naming Conventions](#naming-conventions)
+      - [Import Organization](#import-organization)
+      - [Class Design Patterns](#class-design-patterns)
+      - [LWJGL Usage Patterns](#lwjgl-usage-patterns)
+    - [Testing Guidelines (From AGENTS.md)](#testing-guidelines-from-agentsmd)
+      - [Framework & Structure](#framework-structure)
+      - [Best Practices](#best-practices)
+  - [🚀 Next Development Priorities](#🚀-next-development-priorities)
+    - [Immediate (This Session)](#immediate-this-session)
+    - [Short Term (Next Sessions)](#short-term-next-sessions)
+    - [Medium Term (Next Month)](#medium-term-next-month)
+    - [Long Term (Future)](#long-term-future)
+  - [⚠️ Technical Debt & Known Issues](#️-technical-debt-known-issues)
+    - [Critical Issues (Fix Immediately)](#critical-issues-fix-immediately)
+    - [Current Technical Debt](#current-technical-debt)
+    - [Future Refactoring Opportunities](#future-refactoring-opportunities)
+  - [🎯 Development Environment Setup](#🎯-development-environment-setup)
+    - [Quick Start Checklist](#quick-start-checklist)
+    - [Performance Targets](#performance-targets)
+    - [Debugging Tools](#debugging-tools)
+  - [📝 Session Management](#📝-session-management)
+    - [Git & Branch Strategy](#git-branch-strategy)
+    - [Session Continuation Plan](#session-continuation-plan)
+    - [Documentation Usage](#documentation-usage)
+<!--toc:end-->
+
 ## Current Session Status
-**Date**: 2026-02-02  
-**Focus**: Complete development consolidation and feature roadmap  
+**Date**: 2026-02-02
+**Focus**: Complete development consolidation and feature roadmap
 **Status**: Comprehensive documentation integration completed
-
----
-
-## Quick Navigation
-
-- [🎯 Current Implementation Plan](#immediate-implementation-priority-time-relative-game-systems)
-- [🏗️ Architecture Overview](#architecture-overview)
-- [🌍 World Generation Features](#world-generation-enhancement-guide)
-- [🎮 UI & Inventory Systems](#ui-system-guide)
-- [🧍 Entity System Porting](#entity-port-guide)
-- [📅 Development Roadmap](#development-roadmap)
-- [💡 Lighting System](#lighting-system-tutorial)
-- [🔧 Development Standards](#development-standards--patterns)
 
 ---
 
@@ -27,7 +97,7 @@ The game has critical framerate dependencies that make gameplay speed vary with 
 
 **Critical Issues Found:**
 1. **Hardcoded Delta Time** - `App.java:107` uses `float dt = 0.016f` (assumes exactly 60 FPS)
-2. **Hardcoded Delta Time in Player Update** - `App.java:143` passes `0.016f` instead of real delta time  
+2. **Hardcoded Delta Time in Player Update** - `App.java:143` passes `0.016f` instead of real delta time
 3. **Mouse Input Not Time-Normalized** - Raw pixel differences vary with framerate
 
 **Good News**: All physics calculations are already properly structured to use delta time multiplication.
@@ -85,10 +155,10 @@ playerController.update(world, dt, jumpPressed, threadManager);
 public void processMouse(float dx, float dy, float dt) {
     // Normalize mouse input by delta time for consistent sensitivity
     float timeFactor = dt * 60.0f; // Normalize to 60 FPS baseline
-    
+
     yaw += (float)Math.toRadians(dx * Consts.MOUSE_SENS * timeFactor);
     pitch += (float)Math.toRadians(dy * Consts.MOUSE_SENS * timeFactor);
-    
+
     if(pitch > Math.toRadians(89.0f)) pitch = (float)Math.toRadians(89.0f);
     if(pitch < Math.toRadians(-89.0f)) pitch = (float)Math.toRadians(-89.0f);
 }
