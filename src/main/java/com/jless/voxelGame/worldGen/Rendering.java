@@ -25,7 +25,7 @@ public class Rendering {
 
   public static final FrustumIntersection frustum = new FrustumIntersection();
   private static final Matrix4f viewProjMat = new Matrix4f();
-  private static int textureArrayID = TextureLoader.loadTexArray("/Tileset.png", 16);
+  public static int textureArrayID = TextureLoader.loadTexArray("/Tileset.png", 16);
 
   private Rendering() {
     validateShadersCreated();

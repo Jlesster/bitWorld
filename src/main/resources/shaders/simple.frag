@@ -15,7 +15,7 @@ in vec2 vUV;
 in vec3 vNormal;
 in vec2 vTexCoord;
 in vec4 vPosLightSpace;
-flat in int vLayer;
+flat in float vLayer;
 
 out vec4 FragColor;
 

@@ -12,6 +12,7 @@ import org.lwjgl.*;
 
 import org.joml.*;
 
+import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.texture.*;
 
 public class EntityRender {
@@ -270,6 +271,39 @@ public class EntityRender {
 
     glBindVertexArray(renderer.entityVAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+  }
+
+  public static void drawBlockItem(Matrix4f entityModel, byte blockID) {
+    EntityRender renderer = getInstance();
+
+    int id = blockID & 0xFF;
+
+    int top = TextureAtlas.toLayer(Blocks.TEX_TOP[id]);
+    int bottom = TextureAtlas.toLayer(Blocks.TEX_BOTTOM[id]);
+    int side = TextureAtlas.toLayer(Blocks.TEX_SIDE[id]);
+    int front = TextureAtlas.toLayer(Blocks.TEX_FRONT[id]);
+
+    int[] layers = new int[] {
+      front,
+      side,
+      top,
+      bottom,
+      side,
+      side
+    };
+
+    renderer.modelMatrix.set(entityModel).get(renderer.matrixBuffer);
+    Shaders.setModelMatrix(renderer.matrixBuffer);
+    Shaders.setUniformInt("useSolidColor", 0);
+
+    glBindVertexArray(renderer.entityVAO);
+
+    for(int face = 0; face < 6; face++) {
+      Shaders.setTexLayer(layers[face]);
+      long offset = face * 6L * Integer.BYTES;
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, offset);
+    }
     glBindVertexArray(0);
   }
 

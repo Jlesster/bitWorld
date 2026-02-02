@@ -134,7 +134,7 @@ public class Shaders {
     uViewLocation = glGetUniformLocation(shaderProgram, "uView");
     uModelLocation = glGetUniformLocation(shaderProgram, "uModel");
     uTexLocation = glGetUniformLocation(shaderProgram, "uTex");
-    uTexLayerLocation = glGetUniformLocation(shaderProgram, "vLayer");
+    uTexLayerLocation = glGetUniformLocation(shaderProgram, "uLayer");
     uFogStartLocation = glGetUniformLocation(shaderProgram, "uFogStart");
     uFogEndLocation = glGetUniformLocation(shaderProgram, "uFogEnd");
     uFogColorLocation = glGetUniformLocation(shaderProgram, "uFogColor");
@@ -232,44 +232,44 @@ public class Shaders {
 
   public static void setProjMatrix(FloatBuffer matrix) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uProjLocation == -1) throw new IllegalStateException("uProj uniform not found");
+    if(uProjLocation == -1) throw new IllegalStateException("uProj uniform not found");
 
-    glUniformMatrix4fv(instance.uProjLocation, false, matrix);
+    glUniformMatrix4fv(uProjLocation, false, matrix);
   }
 
   public static void setViewMatrix(FloatBuffer matrix) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uViewLocation == -1) throw new IllegalStateException("uView uniform not found");
+    if(uViewLocation == -1) throw new IllegalStateException("uView uniform not found");
 
-    glUniformMatrix4fv(instance.uViewLocation, false, matrix);
+    glUniformMatrix4fv(uViewLocation, false, matrix);
   }
 
   public static void setModelMatrix(FloatBuffer matrix) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uModelLocation == -1) throw new IllegalStateException("uModel uniform not found");
+    if(uModelLocation == -1) throw new IllegalStateException("uModel uniform not found");
 
-    glUniformMatrix4fv(instance.uModelLocation, false, matrix);
+    glUniformMatrix4fv(uModelLocation, false, matrix);
   }
 
   public static void setTextureUnit(int unit) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
+    if(uTexLocation == -1) throw new IllegalStateException("uTex uniform not found");
 
-    if(instance.uTexLocation != -1) {
-      glUniform1i(instance.uTexLocation, unit);
+    if(uTexLocation != -1) {
+      glUniform1i(uTexLocation, unit);
     }
   }
 
   public static void setFogParams(float r, float g, float b, float start, float end) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uFogColorLocation != -1) {
-      glUniform3f(instance.uFogColorLocation, r, g, b);
+    if(uFogColorLocation != -1) {
+      glUniform3f(uFogColorLocation, r, g, b);
     }
-    if(instance.uFogStartLocation != -1) {
-      glUniform1f(instance.uFogStartLocation, start);
+    if(uFogStartLocation != -1) {
+      glUniform1f(uFogStartLocation, start);
     }
-    if(instance.uFogEndLocation != -1) {
-      glUniform1f(instance.uFogEndLocation, end);
+    if(uFogEndLocation != -1) {
+      glUniform1f(uFogEndLocation, end);
     }
   }
 
@@ -281,8 +281,8 @@ public class Shaders {
 
   public static void setCameraPos(Vector3f pos) {
     if(instance == null) throw new IllegalStateException("Shaders not created");
-    if(instance.uCameraPosLocation != -1) {
-      glUniform3f(instance.uCameraPosLocation, pos.x, pos.y, pos.z);
+    if(uCameraPosLocation != -1) {
+      glUniform3f(uCameraPosLocation, pos.x, pos.y, pos.z);
     }
   }
 

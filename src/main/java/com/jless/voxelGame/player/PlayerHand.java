@@ -91,6 +91,10 @@ public class PlayerHand {
     if(heldBlock != BlockID.AIR) {
       renderHeldBlock(handTransform, heldBlock);
     }
+
+    Shaders.setUniformInt("useSolidColor", 0);
+    Shaders.setTexLayer(0);
+    EntityRender.resetModelMatrix();
   }
 
   private void renderArm(Matrix4f transform) {
@@ -121,21 +125,13 @@ public class PlayerHand {
 
   private void renderHeldBlock(Matrix4f transform, byte blockID) {
     Matrix4f blockTransform = new Matrix4f(transform);
+
     blockTransform.translate(0.08f, 0.15f, -0.08f);
     blockTransform.scale(0.2f);
-
     blockTransform.rotateY((float)Math.toRadians(-45));
     blockTransform.rotateX((float)Math.toRadians(15));
 
-    int id = blockID & 0xFF;
-    int tile = Blocks.TEX_SIDE[id];
-
-    EntityRender.drawTexturedEntityWithTransform(
-      blockTransform,
-      -0.5f, -0.5f, -0.5f,
-      0.5f, 0.5f, 0.5f,
-      tile
-    );
+    EntityRender.drawBlockItem(blockTransform, blockID);
   }
 
   private float calculateSwingAngle() {
