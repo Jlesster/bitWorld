@@ -23,6 +23,7 @@ public final class BlockID {
   public static final byte DIAMOND_BLOCK = 19;
   public static final byte FURNACE = 20;
   public static final byte BEDROCK = 21;
+  public static final byte WATER = 22;
 
   private BlockID() {}
 }

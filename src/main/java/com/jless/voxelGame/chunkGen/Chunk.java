@@ -42,11 +42,20 @@ public class Chunk {
     );
   }
 
+  public Chunk(int cx, int cz) {
+    this(new Vector3i(cx, 0 ,cz));
+  }
+
   public byte get(int x, int y, int z) {
     return blocks.get(x, y, z);
   }
 
   public void set(int x, int y, int z, byte id) {
+    blocks.set(x, y, z, id);
+    dirty = true;
+  }
+
+  public void setLocal(int x, int y, int z, byte id) {
     blocks.set(x, y, z, id);
     dirty = true;
   }

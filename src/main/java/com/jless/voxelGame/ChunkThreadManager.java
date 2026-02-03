@@ -14,8 +14,10 @@ public class ChunkThreadManager {
   private static ExecutorService executor;
   private final ConcurrentLinkedQueue<Chunk> uploadQueue;
   private final Set<Long> rebuildingChunks = ConcurrentHashMap.newKeySet();
+  private final Queue<Vector2i> generationQueue = new ConcurrentLinkedQueue<>();
   private final ConcurrentHashMap<Long, CompletableFuture<Chunk>> generatingChunks;
 
+  private static final int MAX_CHUNK_PER_FRAME = 2;
   private int recoveryCount = 0;
 
   ChunkThreadManager(World world) {
@@ -34,6 +36,15 @@ public class ChunkThreadManager {
     int rebuildCount = 0;
     int rebuildLimit = 10;
     int uploadLimit = Consts.MAX_CHUNK_UPLOADS_PER_FRAME;
+    int startedThisFrame = 0;
+
+    while(startedThisFrame < MAX_CHUNK_PER_FRAME && !generationQueue.isEmpty()) {
+      Vector2i pos = generationQueue.poll();
+      if(pos == null) break;
+
+      generateChunkAsync(pos.x, pos.y);
+      startedThisFrame++;
+    }
 
     while(!uploadQueue.isEmpty() && processed < uploadLimit) {
       Chunk upload = uploadQueue.poll();
@@ -133,8 +144,8 @@ public class ChunkThreadManager {
 
   private Chunk generateChunkInternal(int cx, int cz) {
     Chunk chunk = new Chunk(new Vector3i(cx, 0, cz));
+    world.generateChunkTerrain(chunk, cx, cz);
     world.addChunkDirectly(chunk);
-    GenerateTerrain.fillChunk(chunk, world);
 
     if(!chunk.hasAllNeighbors(world)) {
       chunk.buildMeshAsync(world);
@@ -182,6 +193,10 @@ public class ChunkThreadManager {
         neighbor.markDirty();
       }
     }
+  }
+
+  public void requestChunkGeneration(int cx, int cz) {
+    generationQueue.offer(new Vector2i(cx, cz));
   }
 
   public static void cleanup() {

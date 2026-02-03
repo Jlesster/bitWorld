@@ -139,6 +139,12 @@ public class Blocks {
     TEX_BOTTOM[BlockID.BEDROCK & 0xFF] = (TextureAtlas.tile(1, 10));
     TEX_FRONT[BlockID.BEDROCK & 0xFF] = (TextureAtlas.tile(1, 10));
     TEX_SIDE[BlockID.BEDROCK & 0xFF] = (TextureAtlas.tile(1, 10));
+
+    SOLID[BlockID.WATER & 0xFF] = true;
+    TEX_TOP[BlockID.WATER & 0xFF] = (TextureAtlas.tile(3, 0));
+    TEX_BOTTOM[BlockID.WATER & 0xFF] = (TextureAtlas.tile(3, 0));
+    TEX_FRONT[BlockID.WATER & 0xFF] = (TextureAtlas.tile(3, 0));
+    TEX_SIDE[BlockID.WATER & 0xFF] = (TextureAtlas.tile(3, 0));
   }
 
   public static boolean isSolid(byte id) {

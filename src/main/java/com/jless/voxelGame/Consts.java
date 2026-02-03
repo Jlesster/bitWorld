@@ -59,5 +59,7 @@ public final class Consts {
   public static final int MAX_ENTITIES = 128;
   public static final float ENTITY_SPAWN_RADIUS = 22f;
 
+  public static final float SPAWN_PROTECT_RAD = INIT_CHUNK_RADS;
+
   private Consts() {}
 }

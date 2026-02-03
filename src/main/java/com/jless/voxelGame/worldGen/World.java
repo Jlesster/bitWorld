@@ -9,30 +9,88 @@ import org.joml.*;
 import com.jless.voxelGame.*;
 import com.jless.voxelGame.blocks.*;
 import com.jless.voxelGame.chunkGen.*;
-import com.jless.voxelGame.player.*;
+import com.jless.voxelGame.player.*;;
 
 public class World {
 
   public final ConcurrentHashMap<Long, Chunk> chunks = new ConcurrentHashMap<>();
   private final Set<Long> requestedChunks = ConcurrentHashMap.newKeySet();
+  private final Set<Long> postProcessedChunks = ConcurrentHashMap.newKeySet();
+  private final Map<Long, Long> recentlyGenerated = new ConcurrentHashMap<>();
   private static final ConcurrentHashMap<Long, ConcurrentLinkedQueue<QueuedBlock>> queue = new ConcurrentHashMap();
 
-  public static final Perlin NOISE = new Perlin(Consts.SEED);
+  private WorldGenerator worldGenerator;
+  private final Set<Long> generatedChunks = ConcurrentHashMap.newKeySet();
+  private final ConcurrentLinkedQueue<ChunkCoord> postProcessQueue = new ConcurrentLinkedQueue<>();
 
-  public synchronized Chunk getChunk(int cx, int cz) {
-    long key = chunkKey(cx, cz);
-    Chunk c = chunks.get(key);
-    if(c != null) return c;
+  private static final long UNLOAD_GRACE_MS = 5000;
 
-    if(!isInWorldLimit(cx, cz)) {
-      return null;
+  public static class ChunkCoord {
+    final int x, z;
+    ChunkCoord(int x, int z) {
+      this.x = x;
+      this.z = z;
     }
 
-    c = new Chunk(new Vector3i(cx, 0, cz));
-    GenerateTerrain.fillChunk(c, this);
+    @Override
+    public boolean equals(Object o) {
+      if(this == o) return true;
+      if(!(o instanceof ChunkCoord)) return false;
+      ChunkCoord that = (ChunkCoord) o;
+      return x == that.x && z == that.z;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(x, z);
+    }
+  }
+
+  public World() {
+    this.worldGenerator = new WorldGenerator(Consts.SEED);
+  }
+
+  public synchronized Chunk getChunk(int cx, int cz) {
+    return chunks.get(chunkKey(cx, cz));
+  }
+
+  public void processPostProcessQueue() {
+    int maxProcessedPerFrame = 4;
+    int processed = 0;
+
+    Iterator<ChunkCoord> iter = postProcessQueue.iterator();
+    while(iter.hasNext() && processed < maxProcessedPerFrame) {
+      ChunkCoord coord = iter.next();
+      if(hasAllNeighborsGenerated(coord.x, coord.z)) {
+        long key = chunkKey(coord.x, coord.z);
+        if(postProcessedChunks.contains(key)) {
+          iter.remove();
+          continue;
+        }
+        worldGenerator.postProcessChunk(this, coord.x, coord.z);
+        postProcessedChunks.add(key);
+        Chunk chunk = getChunkIfLoaded(coord.x, coord.z);
+        if(chunk != null) chunk.markDirty();
+
+        iter.remove();
+        processed++;
+      }
+    }
+  }
+
+  private boolean hasAllNeighborsGenerated(int cx, int cz) {
+    for(int dx = -1; dx <= 1; dx++) {
+      for(int dz = -1; dz <= 1; dz++) {
+        long key = chunkKey(cx + dx, cz + dz);
+        if(!generatedChunks.contains(key)) return false;
+      }
+    }
+    return true;
+  }
+
+  public void generateChunkTerrain(Chunk c, int cx, int cz) {
+    worldGenerator.generateChunk(c, cx, cz);
     applyQueuedBlocks(c);
-    chunks.put(key, c);
-    return c;
   }
 
   public void generateSpawn() {
@@ -43,11 +101,16 @@ public class World {
         getChunk(cx, cz);
       }
     }
+
+    while(!postProcessQueue.isEmpty()) processPostProcessQueue();
   }
 
   public void addChunkDirectly(Chunk chunk) {
     long key = chunkKey(chunk.pos.x, chunk.pos.z);
     chunks.put(key, chunk);
+    generatedChunks.add(key);
+
+    recentlyGenerated.put(key, System.currentTimeMillis());
 
     chunk.markDirty();
 
@@ -55,13 +118,15 @@ public class World {
     markNeighborDirty(chunk.pos.x + 1, chunk.pos.z);
     markNeighborDirty(chunk.pos.x, chunk.pos.z - 1);
     markNeighborDirty(chunk.pos.x, chunk.pos.z + 1);
+
+    postProcessQueue.add(new ChunkCoord(chunk.pos.x, chunk.pos.z));
   }
 
   public void generateSpawnAsync(ChunkThreadManager threadManager) {
     int r = Consts.INIT_CHUNK_RADS;
     for(int cx = -r; cx <= r; cx++) {
       for(int cz = -r; cz <= r; cz++) {
-        threadManager.generateChunkAsync(cx, cz);
+        threadManager.requestChunkGeneration(cx, cz);
       }
     }
   }
@@ -94,7 +159,7 @@ public class World {
     int cx = ChunkCoords.chunk(x);
     int cz = ChunkCoords.chunk(z);
 
-    Chunk chunk = getChunk(cx, cz);
+    Chunk chunk = getChunkIfLoaded(cx, cz);
     if(chunk == null) return BlockID.AIR;
 
     int lx = ChunkCoords.local(x);
@@ -107,7 +172,9 @@ public class World {
     int cx = ChunkCoords.chunk(x);
     int cz = ChunkCoords.chunk(z);
 
-    Chunk chunk = getChunk(cx, cz);
+    Chunk chunk = getChunkIfLoaded(cx, cz);
+
+    if(chunk == null) return;
 
     int lx = ChunkCoords.local(x);
     int lz = ChunkCoords.local(z);
@@ -233,29 +300,54 @@ public class World {
       }
     }
 
-    List<Long> toRemove = new ArrayList<>();
-    float unloadDist = Consts.STREAM_RADS + 2f;
-    for(Chunk chunk : chunks.values()) {
-      Vector2f chunkDir = new Vector2f(chunk.pos.x - playerCX, chunk.pos.z - playerCZ);
-      float align = chunkDir.normalize().dot(forward);
+    int loadRadius = Consts.STREAM_RADS;
+    int unloadRadius = Consts.STREAM_RADS + 3; // <- tweak (2-6 is typical)
+    long now = System.currentTimeMillis();
 
-      int unloadRadius = baseRadius + 2;
+    int unloadSq = unloadRadius * unloadRadius;
+
+    List<Long> toRemove = new ArrayList<>();
+
+    for(Chunk chunk : chunks.values()) {
       int dx = chunk.pos.x - playerCX;
       int dz = chunk.pos.z - playerCZ;
+      int distSq = dx * dx + dz * dz;
 
-      if(align < -0.05f) unloadRadius -= 2;
+      long key = chunkKey(chunk.pos.x, chunk.pos.z);
 
-      int unloadSq = unloadRadius * unloadRadius;
+      // 🛡 Skip chunks that were generated recently
+      Long genTime = recentlyGenerated.get(key);
+      if(genTime != null && now - genTime < UNLOAD_GRACE_MS) {
+        continue;
+      }
 
-      if(dx * dx + dz * dz > unloadSq) {
+      if(distSq > unloadSq) {
         chunk.cleanup();
-        toRemove.add(chunkKey(chunk.pos.x, chunk.pos.z));
+        toRemove.add(key);
       }
     }
+
     for(Long key : toRemove) {
-      chunks.remove(key);
+      // Remove from loaded map
+      Chunk removed = chunks.remove(key);
+
+      // Clear request flag if it existed
       requestedChunks.remove(key);
+
+      // CRITICAL: allow post-process again if this chunk comes back later
+      postProcessedChunks.remove(key);
+
+      // Optional but recommended: if you treat "generatedChunks" as "currently present"
+      generatedChunks.remove(key);
     }
+    processPostProcessQueue();
+  }
+
+  public boolean areNeighborsLoaded(int cx, int cz) {
+    return getChunkIfLoaded(cx + 1, cz) != null &&
+           getChunkIfLoaded(cx - 1, cz) != null &&
+           getChunkIfLoaded(cx, cz + 1) != null &&
+           getChunkIfLoaded(cx, cz - 1) != null;
   }
 
   private void tryQueueChunk(int cx, int cz, ChunkThreadManager threadManager) {
@@ -265,7 +357,7 @@ public class World {
     if(chunks.containsKey(key) || requestedChunks.contains(key)) return;
 
     requestedChunks.add(key);
-    threadManager.generateChunkAsync(cx, cz);
+    threadManager.requestChunkGeneration(cx, cz);
   }
 
   public void markChunkGenerated(int x, int z) {

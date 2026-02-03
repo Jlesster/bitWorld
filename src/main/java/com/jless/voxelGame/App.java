@@ -39,6 +39,7 @@ public class App {
   private double lastTime = 0.0;
   private double currTime = 0.0;
   private float smoothedDT = 0.016f;
+  private float worldWarmupTimer = 0f;
 
   private void init() {
     Window.create(Consts.W_WIDTH, Consts.W_HEIGHT, Consts.W_TITLE);
@@ -78,7 +79,7 @@ public class App {
     if(spawnY > 0) {
       playerController = new PlayerController(0, spawnY + 2.0f, 0);
     } else {
-      playerController = new PlayerController(0, Consts.WORLD_HEIGHT * 2.0f, 0);
+      playerController = new PlayerController(0, Consts.WORLD_HEIGHT, 0);
     }
 
     player = new Player(world);
@@ -119,8 +120,12 @@ public class App {
       smoothedDT = smoothedDT * (1.0f - Consts.DT_SMOOTHING_FACTOR) + rawDT * Consts.DT_SMOOTHING_FACTOR;
       float dt = smoothedDT;
 
+      worldWarmupTimer += dt;
+      boolean allowStreaming = worldWarmupTimer > 3.0f;
+
       Window.update();
       threadManager.processUploads();
+      world.processPostProcessQueue();
 
       lighting.update(dt);
       Shaders.use();
