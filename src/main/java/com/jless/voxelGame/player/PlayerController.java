@@ -244,11 +244,11 @@ public class PlayerController {
     processMouse(mouseDX, mouseDY, dt);
   }
 
-  public void update(World world, float dt, boolean jumpPressed, ChunkThreadManager threadManager) {
+  public void update(World world, float dt, boolean jumpPressed, ChunkThreadManager threadManager, boolean allowStreaming) {
     int playerCX = (int)Math.floor(PlayerController.pos.x / Consts.CHUNK_SIZE);
     int playerCZ = (int)Math.floor(PlayerController.pos.z / Consts.CHUNK_SIZE);
 
-    if(playerCX != lastCX || playerCZ != lastCZ) {
+    if(playerCX != lastCX || playerCZ != lastCZ && allowStreaming) {
       world.updateStreaming(playerCX, playerCZ, threadManager);
       lastCX = playerCX;
       lastCZ = playerCZ;

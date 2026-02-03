@@ -143,19 +143,19 @@ public class ChunkThreadManager {
   }
 
   private Chunk generateChunkInternal(int cx, int cz) {
+    Chunk existingChunk = world.getChunkIfLoaded(cx, cz);
+    if(existingChunk != null) {
+      System.err.println("Duplicate generation attempt");
+      return existingChunk;
+    }
     Chunk chunk = new Chunk(new Vector3i(cx, 0, cz));
     world.generateChunkTerrain(chunk, cx, cz);
     world.addChunkDirectly(chunk);
 
-    if(!chunk.hasAllNeighbors(world)) {
-      chunk.buildMeshAsync(world);
-      queueForUpload(chunk);
-    } else {
-      chunk.buildMeshAsync(world);
-      queueForUpload(chunk);
-      chunk.markDirty();
-      System.out.println("Chunk waiting for neighbor");
-    }
+    chunk.buildMeshAsync(world);
+    queueForUpload(chunk);
+    if(chunk.hasAllNeighbors(world)) System.out.println("Chunk waiting for neighbor");
+
     return chunk;
   }
 

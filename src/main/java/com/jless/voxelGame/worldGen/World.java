@@ -119,7 +119,10 @@ public class World {
     markNeighborDirty(chunk.pos.x, chunk.pos.z - 1);
     markNeighborDirty(chunk.pos.x, chunk.pos.z + 1);
 
-    postProcessQueue.add(new ChunkCoord(chunk.pos.x, chunk.pos.z));
+    ChunkCoord coord = new ChunkCoord(chunk.pos.x, chunk.pos.z);
+    if(!postProcessedChunks.contains(key) && !postProcessQueue.contains(coord)) {
+      postProcessQueue.add(coord);
+    }
   }
 
   public void generateSpawnAsync(ChunkThreadManager threadManager) {

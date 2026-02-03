@@ -62,6 +62,7 @@ public class App {
 
     int maxWait = 50;
     int waited = 0;
+    int expectedSpawnChunks = (2 * Consts.INIT_CHUNK_RADS + 1) * (2 * Consts.INIT_CHUNK_RADS + 1);
     while(waited < maxWait) {
       try {
         Thread.sleep(100);
@@ -70,9 +71,15 @@ public class App {
       }
       waited++;
 
-      if(world.getChunkIfLoaded(0, 0) != null) {
-        break;
+      int loadedChunks = 0;
+      for(int cx = -Consts.INIT_CHUNK_RADS; cx <= Consts.INIT_CHUNK_RADS; cx++) {
+        for(int cz = -Consts.INIT_CHUNK_RADS; cz <= Consts.INIT_CHUNK_RADS; cz++) {
+          if(world.getChunkIfLoaded(cx, cz) != null) {
+            loadedChunks++;
+          }
+        }
       }
+      if(loadedChunks >= expectedSpawnChunks) break;
     }
 
     int spawnY = world.getSurfY(0, 0);
@@ -159,7 +166,7 @@ public class App {
       }
 
       boolean jumpPressed = Input.isKeyPressed(GLFW_KEY_SPACE);
-      playerController.update(world, dt, jumpPressed, threadManager);
+      playerController.update(world, dt, jumpPressed, threadManager, allowStreaming);
       playerController.getViewMatrix().get(viewMat);
       viewMat.get(viewMatrix);
 
